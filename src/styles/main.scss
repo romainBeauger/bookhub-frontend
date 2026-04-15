@@ -1,13 +1,13 @@
 @use 'variables' as *;
 
 *, *::before, *::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
+  //box-sizing: border-box;
+  //margin: 0;
+  //padding: 0;
 }
 
 body {
   font-family: 'Inter', sans-serif;
-  color: $color-text;
-  background-color: $color-bg;
+  color: black;
+  background-color:var(--color-secondary);
 }
