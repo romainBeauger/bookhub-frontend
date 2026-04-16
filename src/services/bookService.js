@@ -1,6 +1,11 @@
-export const getBooks = async () => {
+export const getBooks = async ({ page = 1, limit = 10 } = {}) => {
     const token = sessionStorage.getItem("token");
-    const response = await fetch("/api/books", {
+    const params = new URLSearchParams({
+        page: String(page),
+        limit: String(limit),
+    });
+
+    const response = await fetch(`/api/books?${params.toString()}`, {
         method: "GET",
         headers: token
             ? {
