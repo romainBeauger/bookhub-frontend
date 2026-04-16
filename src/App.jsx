@@ -3,6 +3,7 @@ import './styles/main.css'
 import AuthPage from "./pages/AuthPage.jsx";
 import { AuthProvider } from "./context/AuthContext.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx"
+import ForgotPasswordPage from "./pages/ForgotPasswordPage.jsx"
 
 function App() {
 
@@ -12,11 +13,12 @@ function App() {
           <Routes>
 
               {/* Exemple de route protégée qui vérifie le token dans le session storage */}
-              {/*<ProtectedRoute>*/}
+              <ProtectedRoute>
               {/*    <RouteAProteger />*/}
-              {/*</ProtectedRoute>*/}
+              </ProtectedRoute>
 
               <Route path="/login" element={<AuthPage defaultTab="login" />} />
+              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
               <Route path="/register" element={<AuthPage defaultTab="register" />} />
               <Route path="*" element={<Navigate to="/login" />} />
           </Routes>

@@ -1,6 +1,6 @@
 import {useState} from "react";
 import {login as loginApi} from "../services/authService.js";
-import {useNavigate} from "react-router-dom";
+import {Link, useNavigate} from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx"
 
 
@@ -111,7 +111,7 @@ export default function LoginForm() {
                         value={dataForm.mot_de_passe}
                         onChange={handleChange}
                     />
-                    <a className="flex justify-end text-sm mt-3 cursor-pointer text-sky-400 font-semibold hover:text-sky-500">Mot de passe oublié ?</a>
+                    <Link to="/forgot-password" className="flex justify-end text-sm mt-3 cursor-pointer text-sky-400 font-semibold hover:text-sky-500">Mot de passe oublié ?</Link>
                     {errors.mot_de_passe && <p className="text-red-500 text-sm mt-1">{errors.mot_de_passe}</p>}
                 </div>
 
@@ -134,7 +134,7 @@ export default function LoginForm() {
                     <div className="flex-1 h-px bg-gray-300"></div>
                 </div>
 
-                <p className="mt-3">Pas encore de compte ? <span className=" cursor-pointer text-sky-400 hover:text-sky-500 font-semibold">S'inscrire</span> </p>
+                <p className="mt-3">Pas encore de compte ? <Link to="/register" className=" cursor-pointer text-sky-400 hover:text-sky-500 font-semibold">S'inscrire</Link> </p>
 
             </form>
 
