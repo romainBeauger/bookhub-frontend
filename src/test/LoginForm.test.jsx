@@ -1,129 +1,109 @@
-// import { render, screen } from '@testing-library/react'
-// import userEvent from '@testing-library/user-event'
-// import { MemoryRouter } from 'react-router-dom'
-// import { vi, describe, it, expect, beforeEach } from 'vitest'
-// import RegisterForm from '../components/RegisterForm'
-//
-//
-//
-//
-//
-// 1) On mocke le module authService
-// vi.mock('../services/authService.js', () => ({
-//     register: vi.fn()
-// }))
-//
-// // 2) On importe le mock APRÈS la déclaration vi.mock
-// import { register } from '../services/authService.js'
-//
-// // 3) Fonction utilitaire : rendre le composant dans un MemoryRouter
-// //    (nécessaire car RegisterForm utilise useNavigate)
-// const renderRegisterForm = () => {
-//     return render(
-//         <MemoryRouter>
-//             <RegisterForm />
-//         </MemoryRouter>
-//     )
-// }
-//
-// describe('RegisterForm', () => {
-//
-//     // Avant chaque test, on remet les mocks à zéro
-//     beforeEach(() => {
-//         vi.clearAllMocks()
-//     })
-//
-//     // --- TEST 1 : le formulaire s'affiche ---
-//     it('affiche tous les champs du formulaire', () => {
-//         renderRegisterForm()
-//
-//         expect(screen.getByPlaceholderText('Saisissez votre nom')).toBeInTheDocument()
-//         expect(screen.getByPlaceholderText('Saisissez votre prénom')).toBeInTheDocument()
-//         expect(screen.getByPlaceholderText('Entrez votre email')).toBeInTheDocument()
-//         expect(screen.getByPlaceholderText('Entrez votre mot de passe')).toBeInTheDocument()
-//         expect(screen.getByPlaceholderText('Confirmez votre mot de passe')).toBeInTheDocument()
-//         expect(screen.getByRole('button', { name: /créer mon compte/i })).toBeInTheDocument()
-//     })
-//
-//     // --- TEST 2 : erreurs sur formulaire vide ---
-//     it('affiche les erreurs si le formulaire est soumis vide', async () => {
-//         const user = userEvent.setup()
-//         renderRegisterForm()
-//
-//         await user.click(screen.getByRole('button', { name: /créer mon compte/i }))
-//
-//         expect(screen.getByText('Le nom est obligatoire')).toBeInTheDocument()
-//         expect(screen.getByText('Le prénom est obligatoire')).toBeInTheDocument()
-//         expect(screen.getByText('Le mail est obligatoire')).toBeInTheDocument()
-//         expect(screen.getByText('Le mot de passe doit faire plus de 8 caractères')).toBeInTheDocument()
-//     })
-//
-//     // --- TEST 3 : format email invalide ---
-//     it('affiche une erreur si le format email est invalide', async () => {
-//         const user = userEvent.setup()
-//         renderRegisterForm()
-//
-//         await user.type(screen.getByPlaceholderText('Entrez votre email'), 'email-invalide')
-//         await user.click(screen.getByRole('button', { name: /créer mon compte/i }))
-//
-//         expect(screen.getByText("Le format d'email est incorrect")).toBeInTheDocument()
-//     })
-//
-//     // --- TEST 4 : mots de passe différents ---
-//     it('affiche une erreur si les mots de passe ne correspondent pas', async () => {
-//         const user = userEvent.setup()
-//         renderRegisterForm()
-//
-//         await user.type(screen.getByPlaceholderText('Entrez votre mot de passe'), 'password123')
-//         await user.type(screen.getByPlaceholderText('Confirmez votre mot de passe'), 'autrepassword')
-//         await user.click(screen.getByRole('button', { name: /créer mon compte/i }))
-//
-//         expect(screen.getByText('Les deux mots de passe doivent être identiques')).toBeInTheDocument()
-//     })
-//
-//     // --- TEST 5 : succès ---
-//     it("appelle register() avec les bonnes données et affiche un toast de succès", async () => {
-//         // On configure le mock pour qu'il simule un succès
-//         register.mockResolvedValue({})
-//
-//         const user = userEvent.setup()
-//         renderRegisterForm()
-//
-//         await user.type(screen.getByPlaceholderText('Saisissez votre nom'), 'Dupont')
-//         await user.type(screen.getByPlaceholderText('Saisissez votre prénom'), 'Jean')
-//         await user.type(screen.getByPlaceholderText('Entrez votre email'), 'jean@mail.com')
-//         await user.type(screen.getByPlaceholderText('Entrez votre mot de passe'), 'password123')
-//         await user.type(screen.getByPlaceholderText('Confirmez votre mot de passe'), 'password123')
-//         await user.click(screen.getByRole('button', { name: /créer mon compte/i }))
-//
-//         // Vérif que register() a bien été appelé avec les bonnes données
-//         expect(register).toHaveBeenCalledWith({
-//             nom: 'Dupont',
-//             prenom: 'Jean',
-//             email: 'jean@mail.com',
-//             mot_de_passe: 'password123',
-//             confirmation: 'password123'
-//         })
-//
-//         // findByText attend que l'élément apparaisse (async)
-//         expect(await screen.findByText('Compte créé avec succès !')).toBeInTheDocument()
-//     })
-//
-//     // --- TEST 6 : erreur API ---
-//     it("affiche l'erreur API en cas d'échec", async () => {
-//         // On configure le mock pour qu'il simule une erreur
-//         register.mockRejectedValue(new Error('Email déjà utilisé'))
-//
-//         const user = userEvent.setup()
-//         renderRegisterForm()
-//
-//         await user.type(screen.getByPlaceholderText('Saisissez votre nom'), 'Dupont')
-//         await user.type(screen.getByPlaceholderText('Saisissez votre prénom'), 'Jean')
-//         await user.type(screen.getByPlaceholderText('Entrez votre email'), 'jean@mail.com')
-//         await user.type(screen.getByPlaceholderText('Entrez votre mot de passe'), 'password123')
-//         await user.type(screen.getByPlaceholderText('Confirmez votre mot de passe'), 'password123')
-//         await user.click(screen.getByRole('button', { name: /créer mon compte/i }))
-//
-//         expect(await screen.findByText('Email déjà utilisé')).toBeInTheDocument()
-//     })
-// })
+import { render, screen, fireEvent } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { MemoryRouter } from 'react-router-dom'
+import { vi, describe, it, expect, beforeEach } from 'vitest'
+import LoginForm from '../components/LoginForm'
+
+// 1) Mock du service authService
+vi.mock('../services/authService.js', () => ({
+    login: vi.fn()
+}))
+
+// 2) Mock du contexte AuthContext
+//    LoginForm appelle useAuth() pour récupérer login()
+//    On simule un faux useAuth qui retourne un login mocké
+const mockLogin = vi.fn()
+vi.mock('../context/AuthContext.jsx', () => ({
+    useAuth: () => ({ login: mockLogin })
+}))
+
+// 3) Import du mock APRÈS vi.mock
+import { login as loginApi } from '../services/authService.js'
+
+// 4) Fonction utilitaire
+const renderLoginForm = () => {
+    return render(
+        <MemoryRouter>
+            <LoginForm />
+        </MemoryRouter>
+    )
+}
+
+describe('LoginForm', () => {
+    beforeEach(() => {
+        vi.clearAllMocks()
+    })
+
+    // --- TEST 1 : le formulaire s'affiche ---
+    it('affiche tous les champs du formulaire', () => {
+        renderLoginForm()
+
+        expect(screen.getByPlaceholderText('Entrez votre email')).toBeInTheDocument()
+        expect(screen.getByPlaceholderText('Entrez votre mot de passe')).toBeInTheDocument()
+        expect(screen.getByRole('button', { name: /se connecter/i })).toBeInTheDocument()
+    })
+
+    // --- TEST 2 : erreurs sur formulaire vide ---
+    it('affiche les erreurs si le formulaire est soumis vide', async () => {
+        const user = userEvent.setup()
+        renderLoginForm()
+
+        await user.click(screen.getByRole('button', { name: /se connecter/i }))
+
+        expect(screen.getByText('Le mail est obligatoire')).toBeInTheDocument()
+        expect(screen.getByText('Le mot de passe doit faire plus de 8 caractères')).toBeInTheDocument()
+    })
+
+    // --- TEST 3 : format email invalide ---
+    it('affiche une erreur si le format email est invalide', () => {
+        renderLoginForm()
+
+        fireEvent.change(screen.getByPlaceholderText('Entrez votre email'), {
+            target: { value: 'email-invalide' }
+        })
+
+        fireEvent.submit(screen.getByRole('button', { name: /se connecter/i }).closest('form'))
+
+        expect(screen.getByText("Le format d'email est incorrect")).toBeInTheDocument()
+    })
+
+    // --- TEST 4 : succès ---
+    it("appelle loginApi() avec les bonnes données et affiche un toast de succès", async () => {
+        // On simule une réponse API réussie
+        loginApi.mockResolvedValue({ token: 'fake-token', user: { id: 1, nom: 'Dupont' } })
+
+        const user = userEvent.setup()
+        renderLoginForm()
+
+        await user.type(screen.getByPlaceholderText('Entrez votre email'), 'jean@mail.com')
+        await user.type(screen.getByPlaceholderText('Entrez votre mot de passe'), 'password123')
+        await user.click(screen.getByRole('button', { name: /se connecter/i }))
+
+        // Vérif que loginApi() a bien été appelé avec les bonnes données
+        expect(loginApi).toHaveBeenCalledWith({
+            email: 'jean@mail.com',
+            mot_de_passe: 'password123'
+        })
+
+        // Vérif que login() du contexte a bien été appelé avec la réponse API
+        expect(mockLogin).toHaveBeenCalledWith({ token: 'fake-token', user: { id: 1, nom: 'Dupont' } })
+
+        // Vérif que le toast de succès apparaît
+        expect(await screen.findByText('Connecté avec succès !')).toBeInTheDocument()
+    })
+
+    // --- TEST 5 : erreur API ---
+    it("affiche l'erreur API en cas d'échec", async () => {
+        loginApi.mockRejectedValue(new Error('Identifiants incorrects'))
+
+        const user = userEvent.setup()
+        renderLoginForm()
+
+        await user.type(screen.getByPlaceholderText('Entrez votre email'), 'jean@mail.com')
+        await user.type(screen.getByPlaceholderText('Entrez votre mot de passe'), 'password123')
+        await user.click(screen.getByRole('button', { name: /se connecter/i }))
+
+        expect(await screen.findByText('Identifiants incorrects', { selector: 'p' })).toBeInTheDocument()
+    })
+
+})
