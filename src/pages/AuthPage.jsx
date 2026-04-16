@@ -1,10 +1,16 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import RegisterForm from '../components/RegisterForm'
 import LoginForm from '../components/LoginForm'
 
 export default function AuthPage({ defaultTab = 'login' }) {
 
     const [activeTab, setActiveTab] = useState(defaultTab)
+    const navigate = useNavigate()
+
+    useEffect(() => {
+        setActiveTab(defaultTab)
+    }, [defaultTab])
 
     return (
         <div className="min-h-screen flex">
@@ -19,7 +25,7 @@ export default function AuthPage({ defaultTab = 'login' }) {
             </div>
 
             {/* Partie droite - formulaire */}
-            <div className="w-full md:w-1/2 flex flex-col justify-center px-8 md:px-16 bg-gray-100 min-h-screen">
+            <div className="w-full md:w-1/2 flex flex-col justify-center px-8 md:px-16 bg-gray-100 min-h-screen rounded-l-[75px]">
 
                 {/* Titre mobile uniquement */}
                 <div className="md:hidden text-center mb-8">
@@ -33,7 +39,7 @@ export default function AuthPage({ defaultTab = 'login' }) {
                 {/* Onglets */}
                 <div className="flex border-b border-gray-300 mb-8">
                     <button
-                        onClick={() => setActiveTab('login')}
+                        onClick={() => navigate('/login')}
                         className={`flex-1 pb-3 text-sm font-medium transition-colors cursor-pointer ${
                             activeTab === 'login'
                                 ? 'border-b-2 border-sky-400 text-sky-400'
@@ -43,7 +49,7 @@ export default function AuthPage({ defaultTab = 'login' }) {
                         Connexion
                     </button>
                     <button
-                        onClick={() => setActiveTab('register')}
+                        onClick={() => navigate('/register')}
                         className={`flex-1 pb-3 text-sm font-medium transition-colors cursor-pointer ${
                             activeTab === 'register'
                                 ? 'border-b-2 border-sky-400 text-sky-400'
