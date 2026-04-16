@@ -59,7 +59,7 @@ export default function LoginForm() {
                 // console.log("data reçu de l'API :", data)
                 login(data)
                 setToast({ message: "Connecté avec succès !", type: "success" })
-                setTimeout(() => navigate('/'), 2000)
+                setTimeout(() => navigate('/books'), 2000)
             }
             catch(error) {
                 // erreur API -> afficher le message

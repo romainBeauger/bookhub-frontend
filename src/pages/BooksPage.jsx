@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { getBooks } from "../services/bookService.js";
+import { useAuth } from "../context/AuthContext.jsx";
 
 function extractBooks(payload) {
     if (Array.isArray(payload)) {
@@ -53,34 +54,6 @@ function getStatus(book) {
     };
 }
 
-function readStoredUser() {
-    if (typeof window === "undefined") {
-        return null;
-    }
-
-    const candidateKeys = ["user", "authUser", "currentUser", "profile"];
-
-    for (const key of candidateKeys) {
-        const rawValue = window.localStorage.getItem(key);
-
-        if (!rawValue) {
-            continue;
-        }
-
-        try {
-            const parsed = JSON.parse(rawValue);
-
-            if (parsed && typeof parsed === "object") {
-                return parsed;
-            }
-        } catch {
-            // Ignore invalid storage values and continue scanning.
-        }
-    }
-
-    return null;
-}
-
 function getUserDisplayName(user) {
     if (!user) {
         return "Mon espace";
@@ -119,11 +92,11 @@ function getUserInitials(name) {
 }
 
 export default function BooksPage() {
+    const { user } = useAuth();
     const [books, setBooks] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     const [search, setSearch] = useState("");
-    const [userName, setUserName] = useState("Mon espace");
 
     useEffect(() => {
         let ignore = false;
@@ -156,11 +129,6 @@ export default function BooksPage() {
         };
     }, []);
 
-    useEffect(() => {
-        const storedUser = readStoredUser();
-        setUserName(getUserDisplayName(storedUser));
-    }, []);
-
     const filteredBooks = books.filter((book) => {
         const query = search.trim().toLowerCase();
 
@@ -191,6 +159,7 @@ export default function BooksPage() {
         (book) => Number(book?.availableCopies ?? 0) > 0
     ).length;
     const unavailableCount = filteredBooks.length - availableCount;
+    const userName = getUserDisplayName(user);
 
     return (
         <main className="min-h-screen bg-[#f2f2f2] p-3 md:p-6">

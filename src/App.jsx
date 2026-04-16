@@ -12,16 +12,17 @@ function App() {
     <AuthProvider>
       <BrowserRouter>
           <Routes>
-
-              {/* Exemple de route protégée qui vérifie le token dans le session storage */}
-              <ProtectedRoute>
-              {/*    <RouteAProteger />*/}
-              </ProtectedRoute>
-
               <Route path="/login" element={<AuthPage defaultTab="login" />} />
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />
               <Route path="/register" element={<AuthPage defaultTab="register" />} />
-              <Route path="/books" element={<BooksPage />} />
+              <Route
+                path="/books"
+                element={
+                  <ProtectedRoute>
+                    <BooksPage />
+                  </ProtectedRoute>
+                }
+              />
               <Route path="*" element={<Navigate to="/login" />} />
           </Routes>
       </BrowserRouter>
