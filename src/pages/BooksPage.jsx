@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { getBooks } from "../services/bookService.js";
 import { useAuth } from "../context/AuthContext.jsx";
 
@@ -41,16 +42,12 @@ function getStatus(book) {
         return {
             label: "Indisponible",
             badgeClass: "bg-red-100 text-red-500",
-            buttonLabel: "Reserver",
-            buttonClass: "bg-slate-700 text-white",
         };
     }
 
     return {
         label: "Disponible",
         badgeClass: "bg-emerald-100 text-emerald-500",
-        buttonLabel: "Emprunter",
-        buttonClass: "bg-sky-500 text-white",
     };
 }
 
@@ -416,12 +413,12 @@ export default function BooksPage() {
                                                         <p className="text-sm text-slate-500">
                                                             {book?.availableCopies ?? 0}/{book?.totalCopies ?? 0} exemplaires disponibles
                                                         </p>
-                                                        <button
-                                                            type="button"
-                                                            className={`mt-3 w-full rounded-xl border border-slate-800 px-4 py-3 text-sm font-semibold ${status.buttonClass}`}
+                                                        <Link
+                                                            to={`/books/${book.id}`}
+                                                            className="mt-3 block w-full rounded-xl border border-slate-800 bg-white px-4 py-3 text-center text-sm font-semibold text-slate-900 transition-colors duration-200 hover:bg-slate-100"
                                                         >
-                                                            {status.buttonLabel}
-                                                        </button>
+                                                            Voir détails
+                                                        </Link>
                                                     </div>
                                                 </article>
                                             );

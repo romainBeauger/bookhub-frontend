@@ -3,6 +3,7 @@ import './styles/main.css'
 import AuthPage from "./pages/AuthPage.jsx";
 import { AuthProvider } from "./context/AuthContext.jsx";
 import BooksPage from "./pages/BooksPage.jsx";
+import BookDetailsPage from "./pages/BookDetailsPage.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx"
 import ForgotPasswordPage from "./pages/ForgotPasswordPage.jsx"
 
@@ -26,6 +27,14 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <BooksPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/books/:id"
+                element={
+                  <ProtectedRoute>
+                    <BookDetailsPage />
                   </ProtectedRoute>
                 }
               />
