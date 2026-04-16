@@ -25,7 +25,7 @@ export default function AuthPage({ defaultTab = 'login' }) {
             </div>
 
             {/* Partie droite - formulaire */}
-            <div className="w-full md:w-1/2 flex flex-col justify-center px-8 md:px-16 bg-gray-100 min-h-screen rounded-l-[75px]">
+            <div className="w-full md:w-1/2 flex flex-col justify-center px-8 md:px-16 bg-gray-100 min-h-screen max-h-105 rounded-l-[75px]">
 
                 {/* Titre mobile uniquement */}
                 <div className="md:hidden text-center mb-8">
@@ -36,35 +36,39 @@ export default function AuthPage({ defaultTab = 'login' }) {
                     </p>
                 </div>
 
-                {/* Onglets */}
-                <div className="flex border-b border-gray-300 mb-8">
-                    <button
-                        onClick={() => navigate('/login')}
-                        className={`flex-1 pb-3 text-sm font-medium transition-colors cursor-pointer ${
-                            activeTab === 'login'
-                                ? 'border-b-2 border-sky-400 text-sky-400'
-                                : 'text-gray-500'
-                        }`}
-                    >
-                        Connexion
-                    </button>
-                    <button
-                        onClick={() => navigate('/register')}
-                        className={`flex-1 pb-3 text-sm font-medium transition-colors cursor-pointer ${
-                            activeTab === 'register'
-                                ? 'border-b-2 border-sky-400 text-sky-400'
-                                : 'text-gray-500'
-                        }`}
-                    >
-                        Inscription
-                    </button>
+                {/* Onglets + Formulaire dans un bloc de hauteur fixe */}
+                <div className="h-[420px]">
 
+                    {/* Onglets */}
+                    <div className="flex border-b border-gray-300 mb-8">
+                        <button
+                            onClick={() => navigate('/login')}
+                            className={`flex-1 pb-3 text-sm font-medium transition-colors cursor-pointer ${
+                                activeTab === 'login'
+                                    ? 'border-b-2 border-sky-400 text-sky-400'
+                                    : 'text-gray-500'
+                            }`}
+                        >
+                            Connexion
+                        </button>
+                        <button
+                            onClick={() => navigate('/register')}
+                            className={`flex-1 pb-3 text-sm font-medium transition-colors cursor-pointer ${
+                                activeTab === 'register'
+                                    ? 'border-b-2 border-sky-400 text-sky-400'
+                                    : 'text-gray-500'
+                            }`}
+                        >
+                            Inscription
+                        </button>
+                    </div>
 
+                    {/* Formulaire actif */}
+                    <div>
+                        {activeTab === 'login' ? <LoginForm /> : <RegisterForm />}
+                    </div>
 
                 </div>
-
-                {/* Formulaire actif */}
-                {activeTab === 'login' ? <LoginForm /> : <RegisterForm />}
 
             </div>
 

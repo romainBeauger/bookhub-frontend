@@ -1,21 +1,27 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom"
-import Auth from './pages/AuthPage.jsx'
 import './styles/main.css'
 import AuthPage from "./pages/AuthPage.jsx";
+import { AuthProvider } from "./context/AuthContext.jsx";
+import ProtectedRoute from "./components/ProtectedRoute.jsx"
 
 function App() {
 
-
   return (
-    <>
+    <AuthProvider>
       <BrowserRouter>
           <Routes>
+
+              {/* Exemple de route protégée qui vérifie le token dans le session storage */}
+              {/*<ProtectedRoute>*/}
+              {/*    <RouteAProteger />*/}
+              {/*</ProtectedRoute>*/}
+
               <Route path="/login" element={<AuthPage defaultTab="login" />} />
               <Route path="/register" element={<AuthPage defaultTab="register" />} />
               <Route path="*" element={<Navigate to="/login" />} />
           </Routes>
       </BrowserRouter>
-    </>
+    </AuthProvider>
   )
 }
 

@@ -136,7 +136,7 @@ export default function RegisterForm() {
                             type="email"
                             name="email"
                             id="email"
-                            placeholder="email"
+                            placeholder="Entrez votre email"
                             value={dataForm.email}
                             onChange={handleChange}
                         />
