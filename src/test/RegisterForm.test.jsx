@@ -2,7 +2,7 @@ import { render, screen, fireEvent } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { vi, describe, it, expect, beforeEach } from 'vitest'
-import RegisterForm from '../components/RegisterForm'
+import RegisterForm from '../components/AuthPage/RegisterForm.jsx'
 
 // 1) On mocke le module authService
 vi.mock('../services/authService.js', () => ({

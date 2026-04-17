@@ -2,7 +2,7 @@ import { render, screen, fireEvent } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { vi, describe, it, expect, beforeEach } from 'vitest'
-import LoginForm from '../components/LoginForm'
+import LoginForm from '../components/AuthPage/LoginForm.jsx'
 
 // 1) Mock du service authService
 vi.mock('../services/authService.js', () => ({

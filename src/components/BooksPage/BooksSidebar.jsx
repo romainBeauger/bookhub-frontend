@@ -1,3 +1,5 @@
+import { NavLink } from 'react-router-dom';
+
 function getCategoryOption(category) {
     return {
         id: String(category?.id ?? category?._id ?? category?.value ?? ""),
@@ -6,8 +8,7 @@ function getCategoryOption(category) {
 }
 
 export default function BooksSidebar({
-    availableCount = 0,
-    unavailableCount = 0,
+
     categories = [],
     filters = {
         author: "",
@@ -23,18 +24,28 @@ export default function BooksSidebar({
         <aside className="border-b border-slate-300 bg-white lg:border-r lg:border-b-0">
             <nav className="border-b border-slate-300 px-5 py-5">
                 <ul className="space-y-2 text-[0.98rem]">
-                    <li className="rounded-xl bg-slate-200 px-3 py-2 font-medium text-blue-500">
-                        CATALOGUE
+                    <li>
+                        <NavLink
+                            to="/books"
+                            className={({ isActive }) =>
+                                `block rounded-xl px-3 py-2 font-medium ${isActive ? 'bg-slate-200 text-blue-500' : 'text-slate-950 hover:bg-slate-100'}`
+                            }
+                        >
+                            CATALOGUE
+                        </NavLink>
                     </li>
-                    <li className="px-3 py-1 font-medium text-slate-950">
-                        MES EMPRUNTS
+                    <li>
+                        <NavLink
+                            to="/my-loans"
+                            className={({ isActive }) =>
+                                `block rounded-xl px-3 py-2 font-medium ${isActive ? 'bg-slate-200 text-blue-500' : 'text-slate-950 hover:bg-slate-100'}`
+                            }
+                        >
+                            MES EMPRUNTS
+                        </NavLink>
                     </li>
-                    <li className="px-3 py-1 font-medium text-slate-950">
-                        MES RESERVATIONS
-                    </li>
-                    <li className="px-3 py-1 font-medium text-slate-950">
-                        MES AVIS
-                    </li>
+                    <li className="px-3 py-1 font-medium text-slate-400">MES RESERVATIONS</li>
+                    <li className="px-3 py-1 font-medium text-slate-400">MES AVIS</li>
                     <li className="px-3 py-1 text-slate-400">(PROFIL)</li>
                 </ul>
             </nav>
