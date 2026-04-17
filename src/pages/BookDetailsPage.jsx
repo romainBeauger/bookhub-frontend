@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import BookCoverImage from "../components/BookCoverImage.jsx";
 import BooksSidebar from "../components/BooksSidebar.jsx";
 import HeaderComponent from "../components/HeaderComponent.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
@@ -104,15 +105,12 @@ export default function BookDetailsPage() {
                                 <div className="flex flex-col gap-8 border-b border-slate-400 p-5 lg:flex-row lg:items-start lg:p-6">
                                     <div className="shrink-0 overflow-hidden rounded-[26px] border-2 border-slate-500 bg-[#404040] lg:w-[220px]">
                                         <div className="grid h-[280px] place-items-center rounded-[22px] text-center text-lg font-semibold text-white sm:h-[320px]">
-                                            {book?.image ? (
-                                                <img
-                                                    src={book.image}
-                                                    alt={book.title}
-                                                    className="h-full w-full rounded-[22px] object-cover"
-                                                />
-                                            ) : (
-                                                "COUVERTURE"
-                                            )}
+                                            <BookCoverImage
+                                                image={book?.image}
+                                                alt={book.title}
+                                                className="h-full w-full rounded-[22px] object-cover"
+                                                fallback="COUVERTURE"
+                                            />
                                         </div>
                                     </div>
 

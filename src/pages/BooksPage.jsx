@@ -1,9 +1,13 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
+import BookCoverImage from "../components/BookCoverImage.jsx";
 import BooksSidebar from "../components/BooksSidebar.jsx";
 import HeaderComponent from "../components/HeaderComponent.jsx";
-import { getBooks } from "../services/bookService.js";
+import { getBooks, getCategories } from "../services/bookService.js";
 import { useAuth } from "../context/AuthContext.jsx";
+
+const DEFAULT_LIMIT = 12;
+const SEARCH_DEBOUNCE_MS = 350;
 
 function extractBooks(payload) {
     if (Array.isArray(payload)) {
@@ -12,6 +16,22 @@ function extractBooks(payload) {
 
     if (Array.isArray(payload?.books)) {
         return payload.books;
+    }
+
+    if (Array.isArray(payload?.data)) {
+        return payload.data;
+    }
+
+    return [];
+}
+
+function extractCategories(payload) {
+    if (Array.isArray(payload)) {
+        return payload;
+    }
+
+    if (Array.isArray(payload?.categories)) {
+        return payload.categories;
     }
 
     if (Array.isArray(payload?.data)) {
@@ -53,19 +73,156 @@ function getStatus(book) {
     };
 }
 
+function parsePositiveInteger(value, fallbackValue) {
+    const parsedValue = Number.parseInt(value, 10);
+
+    return Number.isNaN(parsedValue) || parsedValue <= 0 ? fallbackValue : parsedValue;
+}
+
+function readStateFromSearchParams(searchParams) {
+    const sort = searchParams.get("sort");
+
+    return {
+        q: searchParams.get("q") || "",
+        author: searchParams.get("author") || "",
+        categoryId: searchParams.get("categoryId") || "",
+        available: searchParams.get("available") || "",
+        sort: sort === "asc" || sort === "desc" || sort === "random" ? sort : "random",
+        page: parsePositiveInteger(searchParams.get("page"), 1),
+        limit: DEFAULT_LIMIT,
+    };
+}
+
+function buildSearchParamsFromState(state) {
+    const nextSearchParams = new URLSearchParams();
+
+    const fields = [
+        "q",
+        "author",
+        "categoryId",
+        "available",
+        "sort",
+    ];
+
+    fields.forEach((field) => {
+        const value = String(state[field] ?? "").trim();
+
+        if (value) {
+            nextSearchParams.set(field, value);
+        }
+    });
+
+    nextSearchParams.set("page", String(state.page));
+    nextSearchParams.set("limit", String(state.limit));
+
+    return nextSearchParams;
+}
+
+function areSearchParamsEqual(currentSearchParams, nextSearchParams) {
+    return currentSearchParams.toString() === nextSearchParams.toString();
+}
+
+function hasActiveFilters({ q, author, categoryId, available, sort }) {
+    return [q, author, categoryId, available].some((value) =>
+        String(value ?? "").trim()
+    ) || sort !== "random";
+}
+
 export default function BooksPage() {
     const { user } = useAuth();
+    const [searchParams, setSearchParams] = useSearchParams();
+    const initialState = readStateFromSearchParams(searchParams);
+
     const [books, setBooks] = useState([]);
+    const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
-    const [search, setSearch] = useState("");
-    const [page, setPage] = useState(1);
+    const [searchInput, setSearchInput] = useState(initialState.q);
+    const [debouncedSearch, setDebouncedSearch] = useState(initialState.q);
+    const [filters, setFilters] = useState({
+        author: initialState.author,
+        categoryId: initialState.categoryId,
+        available: initialState.available,
+        sort: initialState.sort,
+    });
+    const [page, setPage] = useState(initialState.page);
     const [pagination, setPagination] = useState({
-        page: 1,
-        limit: 10,
+        page: initialState.page,
+        limit: initialState.limit,
         total: 0,
         pages: 1,
     });
+
+    useEffect(() => {
+        const timeoutId = window.setTimeout(() => {
+            setDebouncedSearch(searchInput.trim());
+        }, SEARCH_DEBOUNCE_MS);
+
+        return () => {
+            window.clearTimeout(timeoutId);
+        };
+    }, [searchInput]);
+
+    useEffect(() => {
+        const nextState = readStateFromSearchParams(searchParams);
+
+        setSearchInput((currentValue) => (currentValue === nextState.q ? currentValue : nextState.q));
+        setDebouncedSearch((currentValue) => (currentValue === nextState.q ? currentValue : nextState.q));
+        setFilters((currentFilters) => {
+            const nextFilters = {
+                author: nextState.author,
+                categoryId: nextState.categoryId,
+                available: nextState.available,
+                sort: nextState.sort,
+            };
+
+            return JSON.stringify(currentFilters) === JSON.stringify(nextFilters)
+                ? currentFilters
+                : nextFilters;
+        });
+        setPage((currentPage) => (currentPage === nextState.page ? currentPage : nextState.page));
+        setPagination((currentPagination) => ({
+            ...currentPagination,
+            limit: nextState.limit,
+        }));
+    }, [searchParams]);
+
+    useEffect(() => {
+        const nextSearchParams = buildSearchParamsFromState({
+            q: searchInput,
+            ...filters,
+            page,
+            limit: pagination.limit,
+        });
+
+        if (!areSearchParamsEqual(searchParams, nextSearchParams)) {
+            setSearchParams(nextSearchParams, { replace: true });
+        }
+    }, [searchInput, filters, page, pagination.limit, searchParams, setSearchParams]);
+
+    useEffect(() => {
+        let ignore = false;
+
+        async function loadCategories() {
+            try {
+                const response = await getCategories();
+
+                if (!ignore) {
+                    setCategories(extractCategories(response));
+                }
+            } catch (err) {
+                if (!ignore) {
+                    setCategories([]);
+                }
+            }
+        }
+
+        loadCategories();
+
+        return () => {
+            ignore = true;
+        };
+    }, []);
 
     useEffect(() => {
         let ignore = false;
@@ -75,16 +232,25 @@ export default function BooksPage() {
                 setLoading(true);
                 setError("");
 
-                const response = await getBooks({ page, limit: pagination.limit });
+                const response = await getBooks({
+                    q: debouncedSearch,
+                    author: filters.author,
+                    categoryId: filters.categoryId,
+                    available: filters.available,
+                    sort: filters.sort,
+                    page,
+                    limit: pagination.limit,
+                });
 
                 if (!ignore) {
                     setBooks(extractBooks(response));
-                    setPagination({
+                    setPagination((currentPagination) => ({
+                        ...currentPagination,
                         page: response?.pagination?.page || page,
-                        limit: response?.pagination?.limit || pagination.limit,
+                        limit: response?.pagination?.limit || currentPagination.limit,
                         total: response?.pagination?.total || 0,
                         pages: response?.pagination?.pages || 1,
-                    });
+                    }));
                 }
             } catch (err) {
                 if (!ignore) {
@@ -102,53 +268,69 @@ export default function BooksPage() {
         return () => {
             ignore = true;
         };
-    }, [page, pagination.limit]);
+    }, [
+        debouncedSearch,
+        filters.author,
+        filters.available,
+        filters.categoryId,
+        filters.sort,
+        page,
+        pagination.limit,
+    ]);
 
-    const filteredBooks = books.filter((book) => {
-        const query = search.trim().toLowerCase();
+    function updateFilter(key, value) {
+        setPage(1);
+        setFilters((currentFilters) => ({
+            ...currentFilters,
+            [key]: value,
+        }));
+    }
 
-        if (!query) {
-            return true;
-        }
+    function resetFilters() {
+        setSearchInput("");
+        setDebouncedSearch("");
+        setFilters({
+            author: "",
+            categoryId: "",
+            available: "",
+            sort: "random",
+        });
+        setPage(1);
+    }
 
-        const haystack = [
-            getTitle(book),
-            getAuthor(book),
-            book?.isbn,
-            getCategoryName(book),
-        ]
-            .filter(Boolean)
-            .join(" ")
-            .toLowerCase();
-
-        return haystack.includes(query);
-    });
-
-    const categoryCounts = filteredBooks.reduce((acc, book) => {
+    const categoryCounts = books.reduce((acc, book) => {
         const category = getCategoryName(book);
         acc[category] = (acc[category] || 0) + 1;
         return acc;
     }, {});
 
-    const availableCount = filteredBooks.filter(
+    const availableCount = books.filter(
         (book) => Number(book?.availableCopies ?? 0) > 0
     ).length;
-    const unavailableCount = filteredBooks.length - availableCount;
+    const unavailableCount = books.length - availableCount;
     const pageNumbers = Array.from(
         { length: pagination.pages || 1 },
         (_, index) => index + 1
     );
+    const filtersAreActive = hasActiveFilters({
+        q: searchInput,
+        ...filters,
+    });
 
     return (
         <main className="min-h-screen bg-[#f2f2f2]">
             <section className="w-full overflow-hidden border border-slate-300 bg-white">
                 <HeaderComponent subtitle="Page d'accueil - Catalogue" user={user} />
 
-                <div className="grid min-h-[calc(100vh-8rem)] lg:grid-cols-[220px_1fr]">
+                <div className="grid min-h-[calc(100vh-8rem)] lg:grid-cols-[280px_1fr]">
                     <BooksSidebar
                         availableCount={availableCount}
                         unavailableCount={unavailableCount}
                         categoryCounts={categoryCounts}
+                        categories={categories}
+                        filters={filters}
+                        onFilterChange={updateFilter}
+                        onResetFilters={resetFilters}
                     />
 
                     <section className="bg-[#efefef]">
@@ -164,13 +346,17 @@ export default function BooksPage() {
                                 <div className="flex w-full max-w-[560px] flex-col gap-3 sm:flex-row">
                                     <input
                                         type="text"
-                                        value={search}
-                                        onChange={(event) => setSearch(event.target.value)}
-                                        placeholder="Recherche par titre, auteur, ISBN..."
+                                        value={searchInput}
+                                        onChange={(event) => {
+                                            setSearchInput(event.target.value);
+                                            setPage(1);
+                                        }}
+                                        placeholder="Recherche par titre, auteur, description, ISBN..."
                                         className="h-11 flex-1 rounded-xl border border-slate-700 bg-white px-4 text-sm outline-none"
                                     />
                                     <button
                                         type="button"
+                                        onClick={() => setPage(1)}
                                         className="h-11 rounded-xl border border-slate-800 bg-white px-6 text-sm font-medium text-slate-950"
                                     >
                                         Rechercher
@@ -194,8 +380,8 @@ export default function BooksPage() {
                             </div>
 
                             <p className="mt-5 text-lg font-semibold text-slate-950">
-                                {search.trim()
-                                    ? `${filteredBooks.length} livres affiches sur ${pagination.total}`
+                                {filtersAreActive
+                                    ? `${pagination.total} livres trouves avec les filtres`
                                     : `${pagination.total} livres trouves`}
                             </p>
                         </div>
@@ -221,21 +407,21 @@ export default function BooksPage() {
                                 </div>
                             )}
 
-                            {!loading && !error && filteredBooks.length === 0 && (
+                            {!loading && !error && books.length === 0 && (
                                 <div className="rounded-[24px] border border-slate-300 bg-white p-8 text-slate-600">
                                     <h2 className="text-xl font-semibold text-slate-900">
                                         Aucun livre disponible
                                     </h2>
                                     <p className="mt-2">
-                                        Aucun resultat ne correspond a la recherche actuelle.
+                                        Aucun resultat ne correspond aux filtres actuels.
                                     </p>
                                 </div>
                             )}
 
-                            {!loading && !error && filteredBooks.length > 0 && (
+                            {!loading && !error && books.length > 0 && (
                                 <>
                                     <div className="grid gap-6 md:grid-cols-2 2xl:grid-cols-3">
-                                        {filteredBooks.map((book, index) => {
+                                        {books.map((book, index) => {
                                             const status = getStatus(book);
 
                                             return (
@@ -253,15 +439,12 @@ export default function BooksPage() {
                                                             {status.label}
                                                         </span>
                                                         <div className="text-lg text-slate-900">
-                                                            {book?.image ? (
-                                                                <img
-                                                                    src={book.image}
-                                                                    alt={getTitle(book)}
-                                                                    className="h-28 w-full rounded-lg object-cover"
-                                                                />
-                                                            ) : (
-                                                                "Couverture"
-                                                            )}
+                                                            <BookCoverImage
+                                                                image={book?.image}
+                                                                alt={getTitle(book)}
+                                                                className="h-28 w-full rounded-lg object-cover"
+                                                                fallback="Couverture"
+                                                            />
                                                         </div>
                                                     </div>
 
@@ -282,7 +465,7 @@ export default function BooksPage() {
                                                             to={`/books/${book.id}`}
                                                             className="mt-3 block w-full rounded-xl border border-slate-800 bg-white px-4 py-3 text-center text-sm font-semibold text-slate-900 transition-colors duration-200 hover:bg-slate-100"
                                                         >
-                                                            Voir détails
+                                                            Voir details
                                                         </Link>
                                                     </div>
                                                 </article>
