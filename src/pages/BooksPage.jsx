@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
-import BookCoverImage from "../components/BookCoverImage.jsx";
+import { useSearchParams } from "react-router-dom";
+import BookCard from "../components/BookCard.jsx";
 import BooksSidebar from "../components/BooksSidebar.jsx";
 import HeaderComponent from "../components/HeaderComponent.jsx";
 import { getBooks, getCategories } from "../services/bookService.js";
@@ -8,6 +8,7 @@ import { useAuth } from "../context/AuthContext.jsx";
 
 const DEFAULT_LIMIT = 12;
 const SEARCH_DEBOUNCE_MS = 350;
+const DEFAULT_VIEW = "grid";
 
 function extractBooks(payload) {
     if (Array.isArray(payload)) {
@@ -41,36 +42,12 @@ function extractCategories(payload) {
     return [];
 }
 
-function getTitle(book) {
-    return book?.title || book?.titre || book?.name || "Livre sans titre";
-}
-
-function getAuthor(book) {
-    return book?.author || book?.auteur || book?.writer || "Auteur inconnu";
-}
-
 function getCategoryName(book) {
     if (typeof book?.category === "string") {
         return book.category;
     }
 
     return book?.category?.name || book?.categorie?.name || "General";
-}
-
-function getStatus(book) {
-    const availableCopies = Number(book?.availableCopies ?? 0);
-
-    if (availableCopies <= 0) {
-        return {
-            label: "Indisponible",
-            badgeClass: "bg-red-100 text-red-500",
-        };
-    }
-
-    return {
-        label: "Disponible",
-        badgeClass: "bg-emerald-100 text-emerald-500",
-    };
 }
 
 function parsePositiveInteger(value, fallbackValue) {
@@ -88,6 +65,7 @@ function readStateFromSearchParams(searchParams) {
         categoryId: searchParams.get("categoryId") || "",
         available: searchParams.get("available") || "",
         sort: sort === "asc" || sort === "desc" || sort === "random" ? sort : "random",
+        view: searchParams.get("view") === "list" ? "list" : DEFAULT_VIEW,
         page: parsePositiveInteger(searchParams.get("page"), 1),
         limit: DEFAULT_LIMIT,
     };
@@ -102,6 +80,7 @@ function buildSearchParamsFromState(state) {
         "categoryId",
         "available",
         "sort",
+        "view",
     ];
 
     fields.forEach((field) => {
@@ -144,6 +123,7 @@ export default function BooksPage() {
         categoryId: initialState.categoryId,
         available: initialState.available,
         sort: initialState.sort,
+        view: initialState.view,
     });
     const [page, setPage] = useState(initialState.page);
     const [pagination, setPagination] = useState({
@@ -174,6 +154,7 @@ export default function BooksPage() {
                 categoryId: nextState.categoryId,
                 available: nextState.available,
                 sort: nextState.sort,
+                view: nextState.view,
             };
 
             return JSON.stringify(currentFilters) === JSON.stringify(nextFilters)
@@ -294,6 +275,7 @@ export default function BooksPage() {
             categoryId: "",
             available: "",
             sort: "random",
+            view: DEFAULT_VIEW,
         });
         setPage(1);
     }
@@ -366,13 +348,23 @@ export default function BooksPage() {
                                 <div className="flex gap-3">
                                     <button
                                         type="button"
-                                        className="rounded-xl border border-slate-800 bg-white px-5 py-2 text-sm font-medium text-slate-950"
+                                        onClick={() => updateFilter("view", "grid")}
+                                        className={`rounded-xl border px-5 py-2 text-sm font-medium transition-colors ${
+                                            filters.view === "grid"
+                                                ? "border-slate-800 bg-slate-900 text-white"
+                                                : "border-slate-800 bg-white text-slate-950"
+                                        }`}
                                     >
                                         Grille
                                     </button>
                                     <button
                                         type="button"
-                                        className="rounded-xl border border-blue-400 bg-white px-5 py-2 text-sm font-medium text-blue-500"
+                                        onClick={() => updateFilter("view", "list")}
+                                        className={`rounded-xl border px-5 py-2 text-sm font-medium transition-colors ${
+                                            filters.view === "list"
+                                                ? "border-blue-500 bg-blue-500 text-white"
+                                                : "border-blue-400 bg-white text-blue-500"
+                                        }`}
                                     >
                                         Liste
                                     </button>
@@ -420,55 +412,20 @@ export default function BooksPage() {
 
                             {!loading && !error && books.length > 0 && (
                                 <>
-                                    <div className="grid gap-6 md:grid-cols-2 2xl:grid-cols-3">
+                                    <div
+                                        className={
+                                            filters.view === "list"
+                                                ? "grid gap-6"
+                                                : "grid gap-6 md:grid-cols-2 2xl:grid-cols-3"
+                                        }
+                                    >
                                         {books.map((book, index) => {
-                                            const status = getStatus(book);
-
                                             return (
-                                                <article
-                                                    key={book?.id || book?._id || `${getTitle(book)}-${index}`}
-                                                    className="overflow-hidden rounded-[22px] border border-slate-500 bg-white"
-                                                >
-                                                    <div className="relative grid h-44 place-items-center border-b border-slate-400 bg-white px-4">
-                                                        <span className="absolute left-4 top-3 text-sm text-slate-400">
-                                                            {getCategoryName(book)}
-                                                        </span>
-                                                        <span
-                                                            className={`absolute right-4 top-3 rounded-full px-3 py-1 text-[0.68rem] font-medium ${status.badgeClass}`}
-                                                        >
-                                                            {status.label}
-                                                        </span>
-                                                        <div className="text-lg text-slate-900">
-                                                            <BookCoverImage
-                                                                image={book?.image}
-                                                                alt={getTitle(book)}
-                                                                className="h-28 w-full rounded-lg object-cover"
-                                                                fallback="Couverture"
-                                                            />
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="space-y-2 px-4 py-4">
-                                                        <h2 className="text-[1.7rem] font-semibold leading-none text-slate-950">
-                                                            {getTitle(book)}
-                                                        </h2>
-                                                        <p className="text-xl text-slate-950">
-                                                            {getAuthor(book)}
-                                                        </p>
-                                                        <p className="text-sm text-slate-500">
-                                                            ISBN: {book?.isbn || "Non renseigne"}
-                                                        </p>
-                                                        <p className="text-sm text-slate-500">
-                                                            {book?.availableCopies ?? 0}/{book?.totalCopies ?? 0} exemplaires disponibles
-                                                        </p>
-                                                        <Link
-                                                            to={`/books/${book.id}`}
-                                                            className="mt-3 block w-full rounded-xl border border-slate-800 bg-white px-4 py-3 text-center text-sm font-semibold text-slate-900 transition-colors duration-200 hover:bg-slate-100"
-                                                        >
-                                                            Voir details
-                                                        </Link>
-                                                    </div>
-                                                </article>
+                                                <BookCard
+                                                    key={book?.id || book?._id || `book-${index}`}
+                                                    book={book}
+                                                    view={filters.view}
+                                                />
                                             );
                                         })}
                                     </div>

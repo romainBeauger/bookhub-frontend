@@ -56,23 +56,6 @@ export default function BooksSidebar({
 
                     <div>
                         <label
-                            htmlFor="book-author-filter"
-                            className="mb-2 block text-sm font-semibold text-slate-950"
-                        >
-                            Auteur
-                        </label>
-                        <input
-                            id="book-author-filter"
-                            type="text"
-                            value={filters.author}
-                            onChange={(event) => onFilterChange("author", event.target.value)}
-                            placeholder="Nom de l'auteur"
-                            className="h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none"
-                        />
-                    </div>
-
-                    <div>
-                        <label
                             htmlFor="book-category-filter"
                             className="mb-2 block text-sm font-semibold text-slate-950"
                         >
@@ -119,22 +102,6 @@ export default function BooksSidebar({
                             <option value="false">Indisponible</option>
                         </select>
 
-                        <div className="mt-3 space-y-2 text-sm">
-                            <div className="flex items-center justify-between gap-3">
-                                <span className="flex items-center gap-2">
-                                    <span className="h-3.5 w-3.5 rounded-[4px] border border-slate-500 bg-blue-400" />
-                                    Disponibles
-                                </span>
-                                <span className="text-slate-500">{availableCount}</span>
-                            </div>
-                            <div className="flex items-center justify-between gap-3">
-                                <span className="flex items-center gap-2">
-                                    <span className="h-3.5 w-3.5 rounded-[4px] border border-slate-400 bg-white" />
-                                    Indisponibles
-                                </span>
-                                <span className="text-slate-500">{unavailableCount}</span>
-                            </div>
-                        </div>
                     </div>
 
                     <div className="grid gap-4">
