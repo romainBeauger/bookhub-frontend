@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import BooksSidebar from "../components/BooksSidebar.jsx";
+import HeaderComponent from "../components/HeaderComponent.jsx";
 import { getBooks } from "../services/bookService.js";
 import { useAuth } from "../context/AuthContext.jsx";
 
@@ -49,43 +51,6 @@ function getStatus(book) {
         label: "Disponible",
         badgeClass: "bg-emerald-100 text-emerald-500",
     };
-}
-
-function getUserDisplayName(user) {
-    if (!user) {
-        return "Mon espace";
-    }
-
-    const fullName = [user.firstName, user.prenom, user.lastName, user.nom]
-        .filter(Boolean)
-        .join(" ")
-        .trim();
-
-    if (fullName) {
-        return fullName;
-    }
-
-    return (
-        user.name ||
-        user.username ||
-        user.pseudo ||
-        user.email ||
-        "Mon espace"
-    );
-}
-
-function getUserInitials(name) {
-    const parts = name
-        .split(" ")
-        .map((part) => part.trim())
-        .filter(Boolean)
-        .slice(0, 2);
-
-    if (parts.length === 0) {
-        return "ME";
-    }
-
-    return parts.map((part) => part[0].toUpperCase()).join("");
 }
 
 export default function BooksPage() {
@@ -169,122 +134,22 @@ export default function BooksPage() {
         (book) => Number(book?.availableCopies ?? 0) > 0
     ).length;
     const unavailableCount = filteredBooks.length - availableCount;
-    const userName = getUserDisplayName(user);
     const pageNumbers = Array.from(
         { length: pagination.pages || 1 },
         (_, index) => index + 1
     );
 
     return (
-        <main className="min-h-screen bg-[#f2f2f2] p-3 md:p-6">
-            <section className="mx-auto max-w-[1280px] overflow-hidden rounded-[32px] border border-slate-300 bg-white shadow-[0_30px_80px_rgba(15,23,42,0.12)]">
-                <header className="border-b-2 border-violet-500 px-6 py-4">
-                    <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                        <div className="flex items-center gap-3">
-                            <div className="grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br from-lime-300 via-cyan-400 to-violet-500 text-lg font-bold text-white">
-                                B
-                            </div>
-                            <div>
-                                <div className="text-[2.1rem] font-semibold leading-none text-slate-950">
-                                    BookHub
-                                </div>
-                                <p className="text-sm text-slate-500">
-                                    Page d&apos;accueil - Catalogue
-                                </p>
-                            </div>
-                        </div>
-
-                        <div className="flex items-center gap-3 self-start lg:self-auto">
-                            <div className="rounded-full bg-slate-100 px-4 py-2 text-sm font-medium text-slate-800">
-                                {userName}
-                            </div>
-                            <div className="grid h-10 w-10 place-items-center rounded-full bg-sky-600 text-sm font-semibold text-white ring-4 ring-white">
-                                {getUserInitials(userName)}
-                            </div>
-                            <div className="grid h-10 w-10 place-items-center rounded-full border-2 border-slate-700 text-slate-700">
-                                <span className="text-xs font-semibold">UI</span>
-                            </div>
-                        </div>
-                    </div>
-                </header>
+        <main className="min-h-screen bg-[#f2f2f2]">
+            <section className="w-full overflow-hidden border border-slate-300 bg-white">
+                <HeaderComponent subtitle="Page d'accueil - Catalogue" user={user} />
 
                 <div className="grid min-h-[calc(100vh-8rem)] lg:grid-cols-[220px_1fr]">
-                    <aside className="border-b border-slate-300 bg-white lg:border-r lg:border-b-0">
-                        <nav className="border-b border-slate-300 px-5 py-5">
-                            <ul className="space-y-2 text-[0.98rem]">
-                                <li className="rounded-xl bg-slate-200 px-3 py-2 font-medium text-blue-500">
-                                    CATALOGUE
-                                </li>
-                                <li className="px-3 py-1 font-medium text-slate-950">
-                                    MES EMPRUNTS
-                                </li>
-                                <li className="px-3 py-1 font-medium text-slate-950">
-                                    MES RESERVATIONS
-                                </li>
-                                <li className="px-3 py-1 font-medium text-slate-950">
-                                    MES AVIS
-                                </li>
-                                <li className="px-3 py-1 text-slate-400">(PROFIL)</li>
-                            </ul>
-                        </nav>
-
-                        <div className="px-4 py-5">
-                            <h2 className="mb-4 text-lg font-semibold text-slate-950">
-                                FILTRES
-                            </h2>
-
-                            <div className="mb-6">
-                                <h3 className="mb-3 text-sm font-semibold text-slate-950">
-                                    Disponibilite
-                                </h3>
-                                <div className="space-y-2 text-sm">
-                                    <label className="flex items-center justify-between gap-3">
-                                        <span className="flex items-center gap-2">
-                                            <span className="h-3.5 w-3.5 rounded-[4px] border border-slate-500 bg-blue-400" />
-                                            Reservables
-                                        </span>
-                                        <span className="text-slate-500">{availableCount}</span>
-                                    </label>
-                                    <label className="flex items-center justify-between gap-3">
-                                        <span className="flex items-center gap-2">
-                                            <span className="h-3.5 w-3.5 rounded-[4px] border border-slate-400 bg-white" />
-                                            Indisponibles
-                                        </span>
-                                        <span className="text-slate-500">{unavailableCount}</span>
-                                    </label>
-                                </div>
-                            </div>
-
-                            <div className="mb-6">
-                                <h3 className="mb-3 text-sm font-semibold text-slate-950">
-                                    Categories
-                                </h3>
-                                <div className="space-y-2 text-sm">
-                                    {Object.entries(categoryCounts).slice(0, 6).map(([category, count]) => (
-                                        <div
-                                            key={category}
-                                            className="flex items-center justify-between gap-3"
-                                        >
-                                            <span className="flex items-center gap-2">
-                                                <span className="h-3.5 w-3.5 rounded-[4px] border border-slate-400 bg-white" />
-                                                {category}
-                                            </span>
-                                            <span className="text-slate-500">{count}</span>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-
-                            <div>
-                                <h3 className="mb-3 text-sm font-semibold text-slate-950">
-                                    Trier par
-                                </h3>
-                                <div className="rounded-xl border border-slate-700 px-3 py-2 text-sm text-slate-700">
-                                    Titre A-Z
-                                </div>
-                            </div>
-                        </div>
-                    </aside>
+                    <BooksSidebar
+                        availableCount={availableCount}
+                        unavailableCount={unavailableCount}
+                        categoryCounts={categoryCounts}
+                    />
 
                     <section className="bg-[#efefef]">
                         <div className="border-b border-slate-300 px-6 py-6 md:px-8">
