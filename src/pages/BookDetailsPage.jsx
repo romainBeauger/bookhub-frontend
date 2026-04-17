@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import BookCoverImage from "../components/BookCoverImage.jsx";
-import BooksSidebar from "../components/BooksSidebar.jsx";
-import HeaderComponent from "../components/HeaderComponent.jsx";
+import BookCoverImage from "../components/BooksPage/BookCoverImage.jsx";
+import BooksSidebar from "../components/BooksPage/BooksSidebar.jsx";
+import HeaderComponent from "../components/Header/HeaderComponent.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import { getBookById } from "../services/bookService.js";
 

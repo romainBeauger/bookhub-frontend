@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import RegisterForm from '../components/RegisterForm'
-import LoginForm from '../components/LoginForm'
+import RegisterForm from '../components/AuthPage/RegisterForm.jsx'
+import LoginForm from '../components/AuthPage/LoginForm.jsx'
 
 export default function AuthPage({ defaultTab = 'login' }) {
 

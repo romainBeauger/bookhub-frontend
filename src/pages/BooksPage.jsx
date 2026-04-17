@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import BookCard from "../components/BookCard.jsx";
-import BooksSidebar from "../components/BooksSidebar.jsx";
-import HeaderComponent from "../components/HeaderComponent.jsx";
+import BookCard from "../components/BooksPage/BookCard.jsx";
+import BooksSidebar from "../components/BooksPage/BooksSidebar.jsx";
+import HeaderComponent from "../components/Header/HeaderComponent.jsx";
 import { getBooks, getCategories } from "../services/bookService.js";
 import { useAuth } from "../context/AuthContext.jsx";
 
@@ -109,6 +109,7 @@ function hasActiveFilters({ q, author, categoryId, available, sort }) {
 
 export default function BooksPage() {
     const { user } = useAuth();
+    const [navOpen, setNavOpen] = useState(false);
     const [searchParams, setSearchParams] = useSearchParams();
     const initialState = readStateFromSearchParams(searchParams);
 
@@ -195,6 +196,7 @@ export default function BooksPage() {
                 if (!ignore) {
                     setCategories([]);
                 }
+                throw new Error(err.message);
             }
         }
 
@@ -302,7 +304,11 @@ export default function BooksPage() {
     return (
         <main className="min-h-screen bg-[#f2f2f2]">
             <section className="w-full overflow-hidden border border-slate-300 bg-white">
-                <HeaderComponent subtitle="Page d'accueil - Catalogue" user={user} />
+                <HeaderComponent
+                    subtitle="Page d'accueil - Catalogue"
+                    user={user}
+                    onMenuToggle={() => setNavOpen(o => !o)}
+                />
 
                 <div className="grid min-h-[calc(100vh-8rem)] lg:grid-cols-[280px_1fr]">
                     <BooksSidebar
@@ -313,6 +319,8 @@ export default function BooksPage() {
                         filters={filters}
                         onFilterChange={updateFilter}
                         onResetFilters={resetFilters}
+                        mobileOpen={navOpen}
+                        onClose={() => setNavOpen(false)}
                     />
 
                     <section className="bg-[#efefef]">
@@ -325,7 +333,7 @@ export default function BooksPage() {
                             </p>
 
                             <div className="mt-5 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-                                <div className="flex w-full max-w-[560px] flex-col gap-3 sm:flex-row">
+                                <div className="flex w-full max-w-140 flex-col gap-3 sm:flex-row">
                                     <input
                                         type="text"
                                         value={searchInput}
@@ -380,7 +388,7 @@ export default function BooksPage() {
 
                         <div className="px-6 py-6 md:px-8">
                             {loading && (
-                                <div className="flex min-h-[240px] items-center justify-center rounded-[24px] border border-slate-300 bg-white">
+                                <div className="flex min-h-60 items-center justify-center rounded-3xl border border-slate-300 bg-white">
                                     <div className="flex items-center gap-3 text-slate-600">
                                         <img
                                             src="/spinner.svg"
@@ -393,14 +401,14 @@ export default function BooksPage() {
                             )}
 
                             {!loading && error && (
-                                <div className="rounded-[24px] border border-red-200 bg-red-50 p-8 text-red-700">
+                                <div className="rounded-3xl border border-red-200 bg-red-50 p-8 text-red-700">
                                     <h2 className="text-xl font-semibold">Erreur de chargement</h2>
                                     <p className="mt-2">{error}</p>
                                 </div>
                             )}
 
                             {!loading && !error && books.length === 0 && (
-                                <div className="rounded-[24px] border border-slate-300 bg-white p-8 text-slate-600">
+                                <div className="rounded-3xl border border-slate-300 bg-white p-8 text-slate-600">
                                     <h2 className="text-xl font-semibold text-slate-900">
                                         Aucun livre disponible
                                     </h2>
@@ -430,7 +438,7 @@ export default function BooksPage() {
                                         })}
                                     </div>
 
-                                    <div className="mt-8 flex flex-col gap-4 rounded-[24px] border border-slate-300 bg-white px-5 py-4 md:flex-row md:items-center md:justify-between">
+                                    <div className="mt-8 flex flex-col gap-4 rounded-3xl border border-slate-300 bg-white px-5 py-4 md:flex-row md:items-center md:justify-between">
                                         <p className="text-sm text-slate-500">
                                             Page {pagination.page} sur {pagination.pages} - {pagination.total} livres
                                         </p>

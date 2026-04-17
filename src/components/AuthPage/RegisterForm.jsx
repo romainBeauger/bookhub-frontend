@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { register } from "../services/authService.js";
+import { register } from "../../services/authService.js";
 import { useNavigate } from 'react-router-dom'
 
 export default function RegisterForm() {
