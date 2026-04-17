@@ -11,6 +11,7 @@ import HistoryCard from "../components/LoanPage/HistoryCard.jsx";
 export default function MyLoanPage() {
 
     const { user } = useAuth();
+    const [navOpen, setNavOpen] = useState(false);
     const [loans, setLoans] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -42,9 +43,17 @@ export default function MyLoanPage() {
 
     return (
         <div className="min-h-screen bg-[#f2f2f2]">
-            <HeaderComponent subtitle="Page Mes emprunts - User" user={user} />
+            <HeaderComponent
+                subtitle="Page Mes emprunts - User"
+                user={user}
+                onMenuToggle={() => setNavOpen(o => !o)}
+            />
             <div className="grid lg:grid-cols-[280px_1fr]">
-                <BooksSidebar showFilters={false} />
+                <BooksSidebar
+                    showFilters={false}
+                    mobileOpen={navOpen}
+                    onClose={() => setNavOpen(false)}
+                />
                 <main className="p-6 space-y-6">
 
                     {/* Titre */}

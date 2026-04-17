@@ -109,6 +109,7 @@ function hasActiveFilters({ q, author, categoryId, available, sort }) {
 
 export default function BooksPage() {
     const { user } = useAuth();
+    const [navOpen, setNavOpen] = useState(false);
     const [searchParams, setSearchParams] = useSearchParams();
     const initialState = readStateFromSearchParams(searchParams);
 
@@ -195,6 +196,7 @@ export default function BooksPage() {
                 if (!ignore) {
                     setCategories([]);
                 }
+                throw new Error(err.message);
             }
         }
 
@@ -302,7 +304,11 @@ export default function BooksPage() {
     return (
         <main className="min-h-screen bg-[#f2f2f2]">
             <section className="w-full overflow-hidden border border-slate-300 bg-white">
-                <HeaderComponent subtitle="Page d'accueil - Catalogue" user={user} />
+                <HeaderComponent
+                    subtitle="Page d'accueil - Catalogue"
+                    user={user}
+                    onMenuToggle={() => setNavOpen(o => !o)}
+                />
 
                 <div className="grid min-h-[calc(100vh-8rem)] lg:grid-cols-[280px_1fr]">
                     <BooksSidebar
@@ -313,6 +319,8 @@ export default function BooksPage() {
                         filters={filters}
                         onFilterChange={updateFilter}
                         onResetFilters={resetFilters}
+                        mobileOpen={navOpen}
+                        onClose={() => setNavOpen(false)}
                     />
 
                     <section className="bg-[#efefef]">
