@@ -37,25 +37,14 @@ function getStatus(book) {
     };
 }
 
-export default function BookCard({ book, onBorrow, view = "grid" }) {
+export default function BookCard({ book, onBorrow }) {
     const status = getStatus(book);
     const bookId = getBookId(book);
     const isAvailable = Number(book?.availableCopies ?? 0) > 0;
-    const isListView = view === "list";
 
     return (
-        <article
-            className={`overflow-hidden rounded-[22px] border border-slate-500 bg-white ${
-                isListView ? "lg:grid lg:grid-cols-[220px_1fr]" : ""
-            }`}
-        >
-            <div
-                className={`relative place-items-center bg-white px-4 ${
-                    isListView
-                        ? "grid h-full min-h-[220px] border-b border-slate-400 py-6 lg:border-b-0 lg:border-r"
-                        : "grid h-70 border-b border-slate-400"
-                }`}
-            >
+        <article className="overflow-hidden rounded-[22px] border border-slate-500 bg-white">
+            <div className="relative grid  h-70 place-items-center border-b border-slate-400 bg-white px-4">
                 <span className="absolute left-4 top-3 text-sm text-slate-900">
                     {getCategoryName(book)}
                 </span>
@@ -68,26 +57,23 @@ export default function BookCard({ book, onBorrow, view = "grid" }) {
                     <BookCoverImage
                         image={book?.image}
                         alt={getTitle(book)}
-                        className={`rounded-lg object-cover ${
-                            isListView ? "h-52 w-full max-w-[160px]" : "h-50 w-full"
-                        }`}
+                        className="h-50 w-full rounded-lg object-cover"
                         fallback="Couverture"
                     />
                 </div>
             </div>
 
-            <div className={`px-4 py-4 ${isListView ? "flex flex-col justify-between gap-6 lg:px-6 lg:py-6" : "space-y-2"}`}>
+            <div className="space-y-2 px-4 py-4">
                 <h2 className="text-[1.7rem] font-semibold leading-none text-slate-950">
                     {getTitle(book)}
                 </h2>
                 <p className="text-xl text-slate-950">
                     {getAuthor(book)}
                 </p>
-                <p className="text-sm text-slate-500">
-                    {book?.availableCopies ?? 0}/{book?.totalCopies ?? 0} exemplaires disponibles
-                </p>
+                
 
-                <div className={`grid gap-3 ${isListView ? "sm:grid-cols-2 lg:max-w-[320px]" : "mt-3 sm:grid-cols-2"}`}>
+
+                <div className="mt-3 grid gap-3 sm:grid-cols-2">
                     <button
                         type="button"
                         onClick={() => onBorrow?.(book)}
