@@ -1,33 +1,75 @@
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-
 function getAuthHeaders() {
-    const token = sessionStorage.getItem('token');
-    return {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
+    const token = sessionStorage.getItem("token");
+    const headers = {
+        "Content-Type": "application/json",
+    };
+
+    if (token) {
+        headers.Authorization = `Bearer ${token}`;
     }
+
+    return headers;
+}
+
+async function parseJsonResponse(response) {
+    try {
+        return await response.json();
+    } catch {
+        return null;
+    }
+}
+
+function getErrorMessage(errorData, fallbackMessage) {
+    return errorData?.message || errorData?.error || fallbackMessage;
 }
 
 export async function getMyLoans() {
-    const response = await fetch(`${API_URL}/api/loans/me`, {
-        method: 'GET',
-        headers: getAuthHeaders(),
-    })
-    if(!response.ok) {
-        throw new Error('Impossible de charger les emprunts.');
+    let response;
+
+    try {
+        response = await fetch("/api/loans/me", {
+            method: "GET",
+            headers: getAuthHeaders(),
+        });
+    } catch {
+        throw new Error("Impossible de contacter le serveur.");
     }
-    return response.json();
+
+    const responseData = await parseJsonResponse(response);
+
+    if (!response.ok) {
+        if (response.status === 401) {
+            throw new Error("Session expiree ou acces non autorise.");
+        }
+
+        throw new Error(getErrorMessage(responseData, "Impossible de charger les emprunts."));
+    }
+
+    return responseData || [];
 }
 
 export async function borrowBook(bookId) {
-    const response = await fetch(`${API_URL}/api/loans`, {
-        method: 'POST',
-        headers: getAuthHeaders(),
-        body: JSON.stringify({ bookId }),
-    })
-    if (!response.ok) {
-        const err = await response.json().catch(() => ({}));
-        throw new Error(err.message || 'Impossible d\'emprunter ce livre.');
+    let response;
+
+    try {
+        response = await fetch("/api/loans", {
+            method: "POST",
+            headers: getAuthHeaders(),
+            body: JSON.stringify({ bookId }),
+        });
+    } catch {
+        throw new Error("Impossible de contacter le serveur.");
     }
-    return response.json();
+
+    const responseData = await parseJsonResponse(response);
+
+    if (!response.ok) {
+        if (response.status === 401) {
+            throw new Error("Session expiree ou acces non autorise.");
+        }
+
+        throw new Error(getErrorMessage(responseData, "Impossible d'emprunter ce livre."));
+    }
+
+    return responseData;
 }
