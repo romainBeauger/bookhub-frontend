@@ -10,12 +10,17 @@ vi.mock('../services/authService.js', () => ({
 }))
 
 // 2) Mock du contexte AuthContext
-//    LoginForm appelle useAuth() pour récupérer login()
-//    On simule un faux useAuth qui retourne un login mocké
 const mockLogin = vi.fn()
 vi.mock('../context/AuthContext.jsx', () => ({
     useAuth: () => ({ login: mockLogin })
 }))
+
+// 3) Mock de useNavigate
+const mockNavigate = vi.fn()
+vi.mock('react-router-dom', async () => {
+    const actual = await vi.importActual('react-router-dom')
+    return { ...actual, useNavigate: () => mockNavigate }
+})
 
 // 3) Import du mock APRÈS vi.mock
 import { login as loginApi } from '../services/authService.js'
@@ -88,8 +93,10 @@ describe('LoginForm', () => {
         // Vérif que login() du contexte a bien été appelé avec la réponse API
         expect(mockLogin).toHaveBeenCalledWith({ token: 'fake-token', user: { id: 1, nom: 'Dupont' } })
 
-        // Vérif que le toast de succès apparaît
-        expect(await screen.findByText('Connecté avec succès !')).toBeInTheDocument()
+        // Vérif que la navigation vers /books est déclenchée avec le toast en state
+        expect(mockNavigate).toHaveBeenCalledWith('/books', {
+            state: { toast: { message: 'Connecté avec succès !', type: 'success' } }
+        })
     })
 
     // --- TEST 5 : erreur API ---
