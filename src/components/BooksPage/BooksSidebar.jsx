@@ -1,4 +1,6 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext.jsx";
+import { hasStaffAccess } from "../../utils/auth.js";
 
 function getCategoryOption(category) {
     return {
@@ -8,18 +10,20 @@ function getCategoryOption(category) {
 }
 
 export default function BooksSidebar({
-                                         categories = [],
-                                         filters = { author: "", categoryId: "", available: "", sort: "random" },
-                                         onFilterChange,
-                                         onResetFilters,
-                                         showFilters = true,
-                                         mobileOpen = false,
-                                         onClose,
+    categories = [],
+    filters = { author: "", categoryId: "", available: "", sort: "random" },
+    onFilterChange,
+    onResetFilters,
+    showFilters = true,
+    mobileOpen = false,
+    onClose,
                                          onLogout,
-                                     }) {
+}) {
+    const { user } = useAuth();
+    const showDashboardLink = hasStaffAccess(user);
+
     return (
         <>
-            {/* Overlay nav plein écran — mobile uniquement */}
             {mobileOpen && (
                 <div className="fixed inset-0 z-50 flex flex-col bg-white lg:hidden">
                     <div className="flex flex-col items-center gap-2 border-b border-slate-200 px-6 py-8">
@@ -35,7 +39,7 @@ export default function BooksSidebar({
                             to="/books"
                             onClick={onClose}
                             className={({ isActive }) =>
-                                `w-full rounded-xl px-4 py-3 text-center font-medium ${isActive ? 'bg-slate-200 text-blue-500' : 'text-slate-950 hover:bg-slate-100'}`
+                                `w-full rounded-xl px-4 py-3 text-center font-medium ${isActive ? "bg-slate-200 text-blue-500" : "text-slate-950 hover:bg-slate-100"}`
                             }
                         >
                             CATALOGUE
@@ -44,11 +48,34 @@ export default function BooksSidebar({
                             to="/my-loans"
                             onClick={onClose}
                             className={({ isActive }) =>
-                                `w-full rounded-xl px-4 py-3 text-center font-medium ${isActive ? 'bg-slate-200 text-blue-500' : 'text-slate-950 hover:bg-slate-100'}`
+                                `w-full rounded-xl px-4 py-3 text-center font-medium ${isActive ? "bg-slate-200 text-blue-500" : "text-slate-950 hover:bg-slate-100"}`
                             }
                         >
                             MES EMPRUNTS
                         </NavLink>
+                        {showDashboardLink && (
+                            <NavLink
+                                to="/dashboard"
+                                onClick={onClose}
+                                className={({ isActive }) =>
+                                    `w-full rounded-xl px-4 py-3 text-center font-medium ${isActive ? "bg-slate-200 text-blue-500" : "text-slate-950 hover:bg-slate-100"}`
+                                }
+                            >
+                                DASHBOARD
+                            </NavLink>
+                        )}
+                        <span className="w-full px-4 py-3 text-center font-medium text-slate-400">MES RESERVATIONS</span>
+                        <NavLink
+                            to="/mes-avis"
+                            onClick={onClose}
+                            className={({ isActive }) =>
+                                `w-full rounded-xl px-4 py-3 text-center font-medium ${isActive ? "bg-slate-200 text-blue-500" : "text-slate-950 hover:bg-slate-100"}`
+                            }
+                        >
+                            MES AVIS
+                        </NavLink>
+                        <span className="w-full px-4 py-3 text-center text-slate-400">(PROFIL)</span>
+
                         <span className="w-full px-4 py-3 text-center font-medium text-slate-400">MES RÉSERVATIONS</span>
                         <span className="w-full px-4 py-3 text-center font-medium text-slate-400">MES AVIS</span>
                         <NavLink
@@ -75,13 +102,12 @@ export default function BooksSidebar({
                             onClick={onClose}
                             className="mt-2 rounded-xl border border-slate-300 px-6 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
                         >
-                            ← Retour
+                            Retour
                         </button>
                     </nav>
                 </div>
             )}
 
-            {/* Sidebar desktop — masquée sur mobile */}
             <aside className="hidden border-r border-slate-300 bg-white lg:block">
                 <nav className="border-b border-slate-300 px-5 py-5">
                     <ul className="space-y-2 text-[0.98rem]">
@@ -89,7 +115,7 @@ export default function BooksSidebar({
                             <NavLink
                                 to="/books"
                                 className={({ isActive }) =>
-                                    `block rounded-xl px-3 py-2 font-medium ${isActive ? 'bg-slate-200 text-blue-500' : 'text-slate-950 hover:bg-slate-100'}`
+                                    `block rounded-xl px-3 py-2 font-medium ${isActive ? "bg-slate-200 text-blue-500" : "text-slate-950 hover:bg-slate-100"}`
                                 }
                             >
                                 CATALOGUE
@@ -99,24 +125,27 @@ export default function BooksSidebar({
                             <NavLink
                                 to="/my-loans"
                                 className={({ isActive }) =>
-                                    `block rounded-xl px-3 py-2 font-medium ${isActive ? 'bg-slate-200 text-blue-500' : 'text-slate-950 hover:bg-slate-100'}`
+                                    `block rounded-xl px-3 py-2 font-medium ${isActive ? "bg-slate-200 text-blue-500" : "text-slate-950 hover:bg-slate-100"}`
                                 }
                             >
                                 MES EMPRUNTS
                             </NavLink>
                         </li>
+                        {showDashboardLink && (
+                            <li>
+                                <NavLink
+                                    to="/dashboard"
+                                    className={({ isActive }) =>
+                                        `block rounded-xl px-3 py-2 font-medium ${isActive ? "bg-slate-200 text-blue-500" : "text-slate-950 hover:bg-slate-100"}`
+                                    }
+                                >
+                                    DASHBOARD
+                                </NavLink>
+                            </li>
+                        )}
                         <li className="px-3 py-1 font-medium text-slate-400">MES RESERVATIONS</li>
                         <li className="px-3 py-1 font-medium text-slate-400">MES AVIS</li>
-                        <li>
-                            <NavLink
-                                to="/profile"
-                                className={({ isActive }) =>
-                                    `block rounded-xl px-3 py-2 font-medium ${isActive ? 'bg-slate-200 text-blue-500' : 'text-slate-950 hover:bg-slate-100'}`
-                                }
-                            >
-                                MON PROFIL
-                            </NavLink>
-                        </li>
+                        <li className="px-3 py-1 text-slate-400">(PROFIL)</li>
                     </ul>
                 </nav>
 
