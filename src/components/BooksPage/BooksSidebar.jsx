@@ -15,6 +15,7 @@ export default function BooksSidebar({
                                          showFilters = true,
                                          mobileOpen = false,
                                          onClose,
+                                         onLogout,
                                      }) {
     return (
         <>
@@ -50,12 +51,29 @@ export default function BooksSidebar({
                         </NavLink>
                         <span className="w-full px-4 py-3 text-center font-medium text-slate-400">MES RÉSERVATIONS</span>
                         <span className="w-full px-4 py-3 text-center font-medium text-slate-400">MES AVIS</span>
-                        <span className="w-full px-4 py-3 text-center text-slate-400">(PROFIL)</span>
+                        <NavLink
+                            to="/profile"
+                            onClick={onClose}
+                            className={({ isActive }) =>
+                                `w-full rounded-xl px-4 py-3 text-center font-medium ${isActive ? 'bg-slate-200 text-blue-500' : 'text-slate-950 hover:bg-slate-100'}`
+                            }
+                        >
+                            MON PROFIL
+                        </NavLink>
 
+                        {onLogout && (
+                            <button
+                                type="button"
+                                onClick={onLogout}
+                                className="w-full rounded-xl border border-slate-300 px-4 py-3 text-center font-medium text-slate-700 hover:bg-slate-100"
+                            >
+                                SE DÉCONNECTER
+                            </button>
+                        )}
                         <button
                             type="button"
                             onClick={onClose}
-                            className="mt-4 rounded-xl border border-slate-300 px-6 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
+                            className="mt-2 rounded-xl border border-slate-300 px-6 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
                         >
                             ← Retour
                         </button>
@@ -89,7 +107,16 @@ export default function BooksSidebar({
                         </li>
                         <li className="px-3 py-1 font-medium text-slate-400">MES RESERVATIONS</li>
                         <li className="px-3 py-1 font-medium text-slate-400">MES AVIS</li>
-                        <li className="px-3 py-1 text-slate-400">(PROFIL)</li>
+                        <li>
+                            <NavLink
+                                to="/profile"
+                                className={({ isActive }) =>
+                                    `block rounded-xl px-3 py-2 font-medium ${isActive ? 'bg-slate-200 text-blue-500' : 'text-slate-950 hover:bg-slate-100'}`
+                                }
+                            >
+                                MON PROFIL
+                            </NavLink>
+                        </li>
                     </ul>
                 </nav>
 

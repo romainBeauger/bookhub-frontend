@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useLocation } from "react-router-dom";
 import BookCard from "../components/BooksPage/BookCard.jsx";
 import BooksSidebar from "../components/BooksPage/BooksSidebar.jsx";
 import HeaderComponent from "../components/Header/HeaderComponent.jsx";
@@ -109,7 +109,16 @@ function hasActiveFilters({ q, author, categoryId, available, sort }) {
 
 export default function BooksPage() {
     const { user } = useAuth();
+    const location = useLocation();
     const [navOpen, setNavOpen] = useState(false);
+    const [toast, setToast] = useState(location.state?.toast || null);
+
+    useEffect(() => {
+        if (toast) {
+            const t = setTimeout(() => setToast(null), 3000);
+            return () => clearTimeout(t);
+        }
+    }, [toast]);
     const [searchParams, setSearchParams] = useSearchParams();
     const initialState = readStateFromSearchParams(searchParams);
 
@@ -303,6 +312,13 @@ export default function BooksPage() {
 
     return (
         <main className="min-h-screen bg-[#f2f2f2]">
+            {toast && (
+                <div className={`fixed top-5 right-5 z-50 px-4 py-3 rounded-lg text-white text-sm shadow-lg ${
+                    toast.type === 'success' ? 'bg-green-500' : 'bg-red-500'
+                }`}>
+                    {toast.message}
+                </div>
+            )}
             <section className="w-full overflow-hidden border border-slate-300 bg-white">
                 <HeaderComponent
                     subtitle="Page d'accueil - Catalogue"
