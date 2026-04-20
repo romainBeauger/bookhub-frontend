@@ -58,8 +58,7 @@ export default function LoginForm() {
                 const data = await loginApi(dataForm)
                 // console.log("data reçu de l'API :", data)
                 login(data)
-                setToast({ message: "Connecté avec succès !", type: "success" })
-                setTimeout(() => navigate('/books'), 2000)
+                navigate('/books', { state: { toast: { message: "Connecté avec succès !", type: "success" } } })
             }
             catch(error) {
                 // erreur API -> afficher le message
