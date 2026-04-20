@@ -140,7 +140,7 @@ export default function BookCard({ book, onBorrow, view = "grid" }) {
     }
 
     return (
-        <article className="overflow-hidden rounded-[22px] border border-slate-500 bg-white">
+        <article className="flex h-full flex-col overflow-hidden rounded-[22px] border border-slate-500 bg-white">
             <div className="relative grid h-70 place-items-center border-b border-slate-400 bg-white px-4">
                 <span className="absolute left-4 top-3 text-sm text-slate-900">
                     {getCategoryName(book)}
@@ -160,22 +160,24 @@ export default function BookCard({ book, onBorrow, view = "grid" }) {
                 </div>
             </div>
 
-            <div className="space-y-2 px-4 py-4">
-                <h2 className="text-[1.7rem] font-semibold leading-none text-slate-950">
-                    {getTitle(book)}
-                </h2>
-                <p className="text-xl text-slate-950">
-                    {getAuthor(book)}
-                </p>
-                {averageRating > 0 ? (
-                    <RatingStars rating={averageRating} allowHalf showValue />
-                ) : (
-                    <p className="text-sm font-medium text-slate-500">
-                        Pas encore de note
+            <div className="flex flex-1 flex-col px-4 py-4">
+                <div className="space-y-2">
+                    <h2 className="text-[1.7rem] font-semibold leading-none text-slate-950">
+                        {getTitle(book)}
+                    </h2>
+                    <p className="text-xl text-slate-950">
+                        {getAuthor(book)}
                     </p>
-                )}
+                    {averageRating > 0 ? (
+                        <RatingStars rating={averageRating} allowHalf showValue />
+                    ) : (
+                        <p className="text-sm font-medium text-slate-500">
+                            Pas encore de note
+                        </p>
+                    )}
+                </div>
 
-                <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                <div className="mt-auto pt-4 grid gap-3 sm:grid-cols-2">
                     <button
                         type="button"
                         onClick={() => onBorrow?.(book)}
