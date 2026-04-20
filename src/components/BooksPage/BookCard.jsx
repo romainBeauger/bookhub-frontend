@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import BookCoverImage from "./BookCoverImage.jsx";
+import RatingStars from "../Reviews/RatingStars.jsx";
 
 function getBookId(book) {
     return book?.id || book?._id || "";
@@ -37,11 +38,25 @@ function getStatus(book) {
     };
 }
 
+function getAverageRating(book) {
+    const rating = Number(
+        book?.averageRating ??
+        book?.average_rating ??
+        book?.ratingAverage ??
+        book?.rating_average ??
+        book?.averageNote ??
+        book?.average_note
+    );
+
+    return Number.isFinite(rating) ? rating : 0;
+}
+
 export default function BookCard({ book, onBorrow, view = "grid" }) {
     const status = getStatus(book);
     const bookId = getBookId(book);
     const isAvailable = Number(book?.availableCopies ?? 0) > 0;
     const isListView = view === "list";
+    const averageRating = getAverageRating(book);
 
     if (isListView) {
         return (
@@ -75,6 +90,15 @@ export default function BookCard({ book, onBorrow, view = "grid" }) {
                             <p className="text-base text-slate-700">
                                 {getAuthor(book)}
                             </p>
+                            {averageRating > 0 ? (
+                                <div className="pt-1">
+                                    <RatingStars rating={averageRating} allowHalf showValue />
+                                </div>
+                            ) : (
+                                <p className="pt-1 text-sm font-medium text-slate-500">
+                                    Pas encore de note
+                                </p>
+                            )}
                         </div>
 
                         <div className="flex flex-col gap-2.5">
@@ -143,6 +167,13 @@ export default function BookCard({ book, onBorrow, view = "grid" }) {
                 <p className="text-xl text-slate-950">
                     {getAuthor(book)}
                 </p>
+                {averageRating > 0 ? (
+                    <RatingStars rating={averageRating} allowHalf showValue />
+                ) : (
+                    <p className="text-sm font-medium text-slate-500">
+                        Pas encore de note
+                    </p>
+                )}
 
                 <div className="mt-3 grid gap-3 sm:grid-cols-2">
                     <button

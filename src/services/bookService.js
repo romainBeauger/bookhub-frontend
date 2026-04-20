@@ -84,7 +84,7 @@ async function handleApiError(response, defaultMessage) {
         throw new Error("Session expiree ou acces non autorise.");
     }
 
-    throw new Error(errorData?.message || defaultMessage);
+    throw new Error(errorData?.message || errorData?.error || defaultMessage);
 }
 
 export const getBooks = async (filters = {}) => {
@@ -129,4 +129,90 @@ export const getCategories = async () => {
     }
 
     return await response.json();
+};
+
+export const getMyReviews = async () => {
+    const response = await fetch("/api/reviews/me", {
+        method: "GET",
+        headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+        await handleApiError(response, "Impossible de recuperer vos avis.");
+    }
+
+    return await response.json();
+};
+
+export const getBookReviews = async (bookId) => {
+    const response = await fetch(`/api/books/${bookId}/reviews`, {
+        method: "GET",
+        headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+        await handleApiError(response, "Impossible de recuperer les avis du livre.");
+    }
+
+    return await response.json();
+};
+
+export const createBookReview = async (bookId, reviewData) => {
+    const response = await fetch(`/api/books/${bookId}/reviews`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            ...getAuthHeaders(),
+        },
+        body: JSON.stringify(reviewData),
+    });
+
+    if (!response.ok) {
+        await handleApiError(response, "Impossible d'enregistrer votre avis.");
+    }
+
+    return await response.json();
+};
+
+export const getAllReviews = async () => {
+    const response = await fetch("/api/reviews", {
+        method: "GET",
+        headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+        await handleApiError(response, "Impossible de recuperer les reviews.");
+    }
+
+    return await response.json();
+};
+
+export const moderateReview = async (reviewId, isModerated = true) => {
+    const response = await fetch(`/api/reviews/${reviewId}/moderate`, {
+        method: "PATCH",
+        headers: {
+            "Content-Type": "application/json",
+            ...getAuthHeaders(),
+        },
+        body: JSON.stringify({ isModerated }),
+    });
+
+    if (!response.ok) {
+        await handleApiError(response, "Impossible de moderer cette review.");
+    }
+
+    return await response.json();
+};
+
+export const deleteReview = async (reviewId) => {
+    const response = await fetch(`/api/reviews/${reviewId}`, {
+        method: "DELETE",
+        headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+        await handleApiError(response, "Impossible de supprimer cette review.");
+    }
+
+    return true;
 };

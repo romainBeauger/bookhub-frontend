@@ -6,7 +6,10 @@ import { AuthProvider } from "./context/AuthContext.jsx";
 import BooksPage from "./pages/BooksPage.jsx";
 import BookDetailsPage from "./pages/BookDetailsPage.jsx";
 import ProtectedRoute from "./components/ProtectedRoute/ProtectedRoute.jsx"
+import StaffRoute from "./components/ProtectedRoute/StaffRoute.jsx";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage.jsx"
+import MyReviewsPage from "./pages/MyReviewsPage.jsx";
+import DashboardPage from "./pages/DashboardPage.jsx";
 
 function App() {
 
@@ -20,6 +23,8 @@ function App() {
               <Route path="/books" element={<ProtectedRoute><BooksPage /></ProtectedRoute>} />
               <Route path="/books/:id" element={<ProtectedRoute><BookDetailsPage /></ProtectedRoute>} />
               <Route path="/my-loans" element={<ProtectedRoute><MyLoanPage /></ProtectedRoute>} />
+              <Route path="/mes-avis" element={<ProtectedRoute><MyReviewsPage /></ProtectedRoute>} />
+              <Route path="/dashboard" element={<StaffRoute><DashboardPage /></StaffRoute>} />
               <Route path="*" element={<Navigate to="/login" />} />
           </Routes>
       </BrowserRouter>
