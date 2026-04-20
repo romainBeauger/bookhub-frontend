@@ -7,6 +7,7 @@ import BooksPage from "./pages/BooksPage.jsx";
 import BookDetailsPage from "./pages/BookDetailsPage.jsx";
 import ProtectedRoute from "./components/ProtectedRoute/ProtectedRoute.jsx"
 import ForgotPasswordPage from "./pages/ForgotPasswordPage.jsx"
+import ProfilePage from "./pages/ProfilePage.jsx"
 
 function App() {
 
@@ -20,6 +21,7 @@ function App() {
               <Route path="/books" element={<ProtectedRoute><BooksPage /></ProtectedRoute>} />
               <Route path="/books/:id" element={<ProtectedRoute><BookDetailsPage /></ProtectedRoute>} />
               <Route path="/my-loans" element={<ProtectedRoute><MyLoanPage /></ProtectedRoute>} />
+              <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
               <Route path="*" element={<Navigate to="/login" />} />
           </Routes>
       </BrowserRouter>
