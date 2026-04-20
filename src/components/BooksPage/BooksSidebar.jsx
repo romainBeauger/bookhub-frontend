@@ -15,6 +15,7 @@ export default function BooksSidebar({
                                          showFilters = true,
                                          mobileOpen = false,
                                          onClose,
+                                         onLogout,
                                      }) {
     return (
         <>
@@ -60,10 +61,19 @@ export default function BooksSidebar({
                             MON PROFIL
                         </NavLink>
 
+                        {onLogout && (
+                            <button
+                                type="button"
+                                onClick={onLogout}
+                                className="w-full rounded-xl border border-slate-300 px-4 py-3 text-center font-medium text-slate-700 hover:bg-slate-100"
+                            >
+                                SE DÉCONNECTER
+                            </button>
+                        )}
                         <button
                             type="button"
                             onClick={onClose}
-                            className="mt-4 rounded-xl border border-slate-300 px-6 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
+                            className="mt-2 rounded-xl border border-slate-300 px-6 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
                         >
                             ← Retour
                         </button>

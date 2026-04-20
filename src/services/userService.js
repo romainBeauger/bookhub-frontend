@@ -32,13 +32,22 @@ export async function updateMyPassword(data) {
         method: 'PATCH',
         headers: getAuthHeaders(),
         body: JSON.stringify({
-            current_password: data.currentPassword,
-            new_password: data.newPassword,
+            ancien_mot_de_passe: data.currentPassword,
+            nouveau_mot_de_passe: data.newPassword,
         }),
     });
     if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error(err?.message || 'Impossible de changer le mot de passe');
+        console.error('Password error response:', err);
+        throw new Error(err?.message || err?.detail || JSON.stringify(err) || 'Impossible de changer le mot de passe');
     }
     return res.json();
+}
+
+export async function deleteMyProfile() {
+    const res = await fetch(`${API_BASE}/users/me`, {
+        method: 'DELETE',
+        headers: getAuthHeaders(),
+    });
+    if (!res.ok) throw new Error('Impossible de supprimer le compte');
 }
