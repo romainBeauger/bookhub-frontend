@@ -144,7 +144,16 @@ export default function BooksSidebar({
                             </li>
                         )}
                         <li className="px-3 py-1 font-medium text-slate-400">MES RESERVATIONS</li>
-                        <li className="px-3 py-1 font-medium text-slate-400">MES AVIS</li>
+                        <li>
+                            <NavLink
+                                to="/mes-avis"
+                                className={({ isActive }) =>
+                                    `block rounded-xl px-3 py-2 font-medium ${isActive ? "bg-slate-200 text-blue-500" : "text-slate-950 hover:bg-slate-100"}`
+                                }
+                            >
+                                MES AVIS
+                            </NavLink>
+                        </li>
                         <li className="px-3 py-1 text-slate-400">(PROFIL)</li>
                     </ul>
                 </nav>
