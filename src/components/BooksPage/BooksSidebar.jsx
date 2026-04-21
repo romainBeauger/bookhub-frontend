@@ -36,6 +36,15 @@ export default function BooksSidebar({
 
                     <nav className="flex flex-col items-center gap-2 px-8 py-6">
                         <NavLink
+                            to="/my-dashboard"
+                            onClick={onClose}
+                            className={({ isActive }) =>
+                                `w-full rounded-xl px-4 py-3 text-center font-medium ${isActive ? "bg-slate-200 text-blue-500" : "text-slate-950 hover:bg-slate-100"}`
+                            }
+                        >
+                            MON TABLEAU DE BORD
+                        </NavLink>
+                        <NavLink
                             to="/books"
                             onClick={onClose}
                             className={({ isActive }) =>
@@ -61,7 +70,7 @@ export default function BooksSidebar({
                                     `w-full rounded-xl px-4 py-3 text-center font-medium ${isActive ? "bg-slate-200 text-blue-500" : "text-slate-950 hover:bg-slate-100"}`
                                 }
                             >
-                                DASHBOARD
+                                MODERATION AVIS
                             </NavLink>
                         )}
                         <span className="w-full px-4 py-3 text-center font-medium text-slate-400">MES RESERVATIONS</span>
@@ -74,10 +83,7 @@ export default function BooksSidebar({
                         >
                             MES AVIS
                         </NavLink>
-                        <span className="w-full px-4 py-3 text-center text-slate-400">(PROFIL)</span>
 
-                        <span className="w-full px-4 py-3 text-center font-medium text-slate-400">MES RÉSERVATIONS</span>
-                        <span className="w-full px-4 py-3 text-center font-medium text-slate-400">MES AVIS</span>
                         <NavLink
                             to="/profile"
                             onClick={onClose}
@@ -113,6 +119,16 @@ export default function BooksSidebar({
                     <ul className="space-y-2 text-[0.98rem]">
                         <li>
                             <NavLink
+                                to="/my-dashboard"
+                                className={({ isActive }) =>
+                                    `block rounded-xl px-3 py-2 font-medium ${isActive ? "bg-slate-200 text-blue-500" : "text-slate-950 hover:bg-slate-100"}`
+                                }
+                            >
+                                MON TABLEAU DE BORD
+                            </NavLink>
+                        </li>
+                        <li>
+                            <NavLink
                                 to="/books"
                                 className={({ isActive }) =>
                                     `block rounded-xl px-3 py-2 font-medium ${isActive ? "bg-slate-200 text-blue-500" : "text-slate-950 hover:bg-slate-100"}`
@@ -139,7 +155,7 @@ export default function BooksSidebar({
                                         `block rounded-xl px-3 py-2 font-medium ${isActive ? "bg-slate-200 text-blue-500" : "text-slate-950 hover:bg-slate-100"}`
                                     }
                                 >
-                                    DASHBOARD
+                                    MODERATION AVIS
                                 </NavLink>
                             </li>
                         )}
