@@ -51,10 +51,12 @@ function getAverageRating(book) {
     return Number.isFinite(rating) ? rating : 0;
 }
 
-export default function BookCard({ book, onBorrow, view = "grid" }) {
+export default function BookCard({ book, onBorrow, borrowing = false, view = "grid" }) {
     const status = getStatus(book);
     const bookId = getBookId(book);
     const isAvailable = Number(book?.availableCopies ?? 0) > 0;
+    const isBorrowDisabled = !isAvailable || borrowing;
+    const borrowLabel = borrowing ? "Emprunt..." : isAvailable ? "Emprunter" : "Indisponible";
     const isListView = view === "list";
     const averageRating = getAverageRating(book);
 
@@ -120,10 +122,10 @@ export default function BookCard({ book, onBorrow, view = "grid" }) {
                             <button
                                 type="button"
                                 onClick={() => onBorrow?.(book)}
-                                disabled={!isAvailable}
+                                disabled={isBorrowDisabled}
                                 className="rounded-xl border border-emerald-500 bg-white px-4 py-3 text-center text-sm font-semibold text-emerald-600 transition-colors duration-200 hover:bg-emerald-50 disabled:cursor-not-allowed disabled:border-slate-300 disabled:text-slate-400 disabled:hover:bg-white"
                             >
-                                Emprunter
+                                {borrowLabel}
                             </button>
 
                             <Link
@@ -181,10 +183,10 @@ export default function BookCard({ book, onBorrow, view = "grid" }) {
                     <button
                         type="button"
                         onClick={() => onBorrow?.(book)}
-                        disabled={!isAvailable}
+                        disabled={isBorrowDisabled}
                         className="rounded-xl border border-emerald-500 bg-white px-4 py-3 text-center text-sm font-semibold text-emerald-600 transition-colors duration-200 hover:bg-emerald-50 disabled:cursor-not-allowed disabled:border-slate-300 disabled:text-slate-400 disabled:hover:bg-white"
                     >
-                        Emprunter
+                        {borrowLabel}
                     </button>
 
                     <Link

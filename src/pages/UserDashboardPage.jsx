@@ -30,7 +30,7 @@ export default function UserDashboardPage() {
             .finally(() => setLoading(false))
     }, [])
 
-    const activeLoans = loans.filter(l => l.status === 'ACTIVE' || l.status === 'OVERDUE')
+    const activeLoans = loans.filter(l => ['ACTIVE', 'OVERDUE', 'RETURN_REQUESTED'].includes(l.status))
     const lateLoans = loans.filter(l => l.isLate)
 
     function handleLogout() {

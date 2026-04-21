@@ -4,6 +4,7 @@ import BookCard from "../components/BooksPage/BookCard.jsx";
 import BooksSidebar from "../components/BooksPage/BooksSidebar.jsx";
 import HeaderComponent from "../components/Header/HeaderComponent.jsx";
 import { getBooks, getCategories } from "../services/bookService.js";
+import { borrowBook } from "../services/loanService.js";
 import { useAuth } from "../context/AuthContext.jsx";
 
 const DEFAULT_LIMIT = 12;
@@ -126,6 +127,7 @@ export default function BooksPage() {
     const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
+    const [borrowingId, setBorrowingId] = useState(null);
     const [searchInput, setSearchInput] = useState(initialState.q);
     const [debouncedSearch, setDebouncedSearch] = useState(initialState.q);
     const [filters, setFilters] = useState({
@@ -291,6 +293,46 @@ export default function BooksPage() {
         setPage(1);
     }
 
+    async function handleBorrow(book) {
+        const bookId = book?.id || book?._id;
+
+        if (!bookId || borrowingId) {
+            return;
+        }
+
+        try {
+            setBorrowingId(bookId);
+            await borrowBook(bookId);
+            setBooks((currentBooks) =>
+                currentBooks.map((currentBook) => {
+                    const currentBookId = currentBook?.id || currentBook?._id;
+
+                    if (currentBookId !== bookId) {
+                        return currentBook;
+                    }
+
+                    const availableCopies = Number(currentBook?.availableCopies ?? 0);
+
+                    return {
+                        ...currentBook,
+                        availableCopies: Math.max(0, availableCopies - 1),
+                    };
+                })
+            );
+            setToast({
+                type: "success",
+                message: `"${book?.title || book?.titre || "Livre"}" a ete emprunte avec succes.`,
+            });
+        } catch (err) {
+            setToast({
+                type: "error",
+                message: err.message || "Impossible d'emprunter ce livre.",
+            });
+        } finally {
+            setBorrowingId(null);
+        }
+    }
+
     const categoryCounts = books.reduce((acc, book) => {
         const category = getCategoryName(book);
         acc[category] = (acc[category] || 0) + 1;
@@ -448,6 +490,8 @@ export default function BooksPage() {
                                                 <BookCard
                                                     key={book?.id || book?._id || `book-${index}`}
                                                     book={book}
+                                                    onBorrow={handleBorrow}
+                                                    borrowing={borrowingId === (book?.id || book?._id)}
                                                     view={filters.view}
                                                 />
                                             );

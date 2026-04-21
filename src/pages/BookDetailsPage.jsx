@@ -7,6 +7,7 @@ import RatingStars from "../components/Reviews/RatingStars.jsx";
 import ReviewCard from "../components/Reviews/ReviewCard.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import { createBookReview, getBookById, getBookReviews } from "../services/bookService.js";
+import { borrowBook } from "../services/loanService.js";
 
 function getCategoryName(book) {
     if (typeof book?.category === "string") {
@@ -88,6 +89,8 @@ export default function BookDetailsPage() {
     const [commentInput, setCommentInput] = useState("");
     const [reviewSubmitError, setReviewSubmitError] = useState("");
     const [reviewSubmitting, setReviewSubmitting] = useState(false);
+    const [borrowSubmitting, setBorrowSubmitting] = useState(false);
+    const [toast, setToast] = useState(null);
 
     useEffect(() => {
         let ignore = false;
@@ -155,6 +158,17 @@ export default function BookDetailsPage() {
     const status = getStatus(book);
     const averageRating = getAverageRating(reviews);
     const currentUserReview = reviews.find((review) => review?.user?.id === user?.id) || null;
+    const canBorrow = Number(book?.availableCopies ?? 0) > 0;
+
+    useEffect(() => {
+        if (!toast) {
+            return;
+        }
+
+        const timer = setTimeout(() => setToast(null), 3000);
+
+        return () => clearTimeout(timer);
+    }, [toast]);
 
     useEffect(() => {
         if (!reviewFormOpen) {
@@ -203,8 +217,42 @@ export default function BookDetailsPage() {
         }
     }
 
+    async function handleBorrow() {
+        if (!book?.id || borrowSubmitting || !canBorrow) {
+            return;
+        }
+
+        setBorrowSubmitting(true);
+
+        try {
+            await borrowBook(book.id);
+            setBook((currentBook) => {
+                if (!currentBook) {
+                    return currentBook;
+                }
+
+                return {
+                    ...currentBook,
+                    availableCopies: Math.max(0, Number(currentBook.availableCopies ?? 0) - 1),
+                };
+            });
+            setToast({ type: "success", message: "Livre emprunte avec succes." });
+        } catch (err) {
+            setToast({ type: "error", message: err.message || "Impossible d'emprunter ce livre." });
+        } finally {
+            setBorrowSubmitting(false);
+        }
+    }
+
     return (
         <main className="min-h-screen bg-[#f2f2f2]">
+            {toast && (
+                <div className={`fixed right-5 top-5 z-50 rounded-lg px-4 py-3 text-sm text-white shadow-lg ${
+                    toast.type === "success" ? "bg-green-500" : "bg-red-500"
+                }`}>
+                    {toast.message}
+                </div>
+            )}
             <section className="w-full overflow-hidden border border-slate-300 bg-white">
                 <HeaderComponent
                     subtitle="Page Detail d'un livre"
@@ -388,9 +436,11 @@ export default function BookDetailsPage() {
                                             </button>
                                             <button
                                                 type="button"
-                                                className="rounded-xl border border-emerald-500 bg-white px-5 py-2 text-sm font-medium text-emerald-600"
+                                                onClick={handleBorrow}
+                                                disabled={!canBorrow || borrowSubmitting}
+                                                className="rounded-xl border border-emerald-500 bg-white px-5 py-2 text-sm font-medium text-emerald-600 disabled:cursor-not-allowed disabled:border-slate-300 disabled:text-slate-400"
                                             >
-                                                Reserver
+                                                {borrowSubmitting ? "Emprunt..." : canBorrow ? "Emprunter" : "Indisponible"}
                                             </button>
                                         </div>
                                     </div>
