@@ -2,6 +2,7 @@ import {useState} from "react";
 import {login as loginApi} from "../../services/authService.js";
 import {Link, useNavigate} from "react-router-dom";
 import { useAuth } from "../../context/AuthContext.jsx"
+import {hasStaffAccess} from "../../utils/auth.js";
 
 
 export default function LoginForm() {
@@ -56,9 +57,10 @@ export default function LoginForm() {
             setLoading(true)
             try {
                 const data = await loginApi(dataForm)
+                const isStaff = hasStaffAccess(data.user)
                 // console.log("data reçu de l'API :", data)
                 login(data)
-                navigate('/books', { state: { toast: { message: "Connecté avec succès !", type: "success" } } })
+                navigate(isStaff ? '/dashboard' : '/my-dashboard', { state: { toast: { message: "Connecté avec succès !", type: "success" } } })
             }
             catch(error) {
                 // erreur API -> afficher le message
