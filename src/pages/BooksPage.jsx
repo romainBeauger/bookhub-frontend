@@ -5,6 +5,7 @@ import BooksSidebar from "../components/BooksPage/BooksSidebar.jsx";
 import HeaderComponent from "../components/Header/HeaderComponent.jsx";
 import { getBooks, getCategories } from "../services/bookService.js";
 import { borrowBook } from "../services/loanService.js";
+import { createReservation } from "../services/reservationService.js";
 import { useAuth } from "../context/AuthContext.jsx";
 
 const DEFAULT_LIMIT = 12;
@@ -128,6 +129,7 @@ export default function BooksPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     const [borrowingId, setBorrowingId] = useState(null);
+    const [reservingId, setReservingId] = useState(null);
     const [searchInput, setSearchInput] = useState(initialState.q);
     const [debouncedSearch, setDebouncedSearch] = useState(initialState.q);
     const [filters, setFilters] = useState({
@@ -333,6 +335,30 @@ export default function BooksPage() {
         }
     }
 
+    async function handleReserve(book) {
+        const bookId = book?.id || book?._id;
+
+        if (!bookId || reservingId) {
+            return;
+        }
+
+        try {
+            setReservingId(bookId);
+            await createReservation(bookId);
+            setToast({
+                type: "success",
+                message: "Reservation creee avec succes.",
+            });
+        } catch (err) {
+            setToast({
+                type: "error",
+                message: err.message || "Impossible de creer la reservation.",
+            });
+        } finally {
+            setReservingId(null);
+        }
+    }
+
     const categoryCounts = books.reduce((acc, book) => {
         const category = getCategoryName(book);
         acc[category] = (acc[category] || 0) + 1;
@@ -492,6 +518,8 @@ export default function BooksPage() {
                                                     book={book}
                                                     onBorrow={handleBorrow}
                                                     borrowing={borrowingId === (book?.id || book?._id)}
+                                                    onReserve={handleReserve}
+                                                    reserving={reservingId === (book?.id || book?._id)}
                                                     view={filters.view}
                                                 />
                                             );

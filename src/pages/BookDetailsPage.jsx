@@ -8,6 +8,7 @@ import ReviewCard from "../components/Reviews/ReviewCard.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import { createBookReview, getBookById, getBookReviews } from "../services/bookService.js";
 import { borrowBook } from "../services/loanService.js";
+import { createReservation } from "../services/reservationService.js";
 
 function getCategoryName(book) {
     if (typeof book?.category === "string") {
@@ -90,6 +91,7 @@ export default function BookDetailsPage() {
     const [reviewSubmitError, setReviewSubmitError] = useState("");
     const [reviewSubmitting, setReviewSubmitting] = useState(false);
     const [borrowSubmitting, setBorrowSubmitting] = useState(false);
+    const [reserveSubmitting, setReserveSubmitting] = useState(false);
     const [toast, setToast] = useState(null);
 
     useEffect(() => {
@@ -244,6 +246,23 @@ export default function BookDetailsPage() {
         }
     }
 
+    async function handleReserve() {
+        if (!book?.id || reserveSubmitting) {
+            return;
+        }
+
+        setReserveSubmitting(true);
+
+        try {
+            await createReservation(book.id);
+            setToast({ type: "success", message: "Reservation creee avec succes." });
+        } catch (err) {
+            setToast({ type: "error", message: err.message || "Impossible de creer la reservation." });
+        } finally {
+            setReserveSubmitting(false);
+        }
+    }
+
     return (
         <main className="min-h-screen bg-[#f2f2f2]">
             {toast && (
@@ -357,6 +376,11 @@ export default function BookDetailsPage() {
                                                 </p>
                                             </div>
                                         </div>
+                                        {Number(book?.availableCopies ?? 0) <= 0 && (
+                                            <span className="inline-flex w-fit rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">
+                                                Aucun exemplaire disponible: vous pouvez reserver ce livre.
+                                            </span>
+                                        )}
                                     </div>
                                 </div>
 
@@ -426,7 +450,7 @@ export default function BookDetailsPage() {
                                             Retour
                                         </Link>
 
-                                        <div className="flex gap-3">
+                                        <div className="flex flex-wrap gap-3">
                                             <button
                                                 type="button"
                                                 onClick={() => setReviewFormOpen((currentValue) => !currentValue)}
@@ -441,6 +465,14 @@ export default function BookDetailsPage() {
                                                 className="rounded-xl border border-emerald-500 bg-white px-5 py-2 text-sm font-medium text-emerald-600 disabled:cursor-not-allowed disabled:border-slate-300 disabled:text-slate-400"
                                             >
                                                 {borrowSubmitting ? "Emprunt..." : canBorrow ? "Emprunter" : "Indisponible"}
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={handleReserve}
+                                                disabled={reserveSubmitting}
+                                                className="rounded-xl border border-amber-400 bg-white px-5 py-2 text-sm font-medium text-amber-700 disabled:cursor-not-allowed disabled:border-slate-300 disabled:text-slate-400"
+                                            >
+                                                {reserveSubmitting ? "Reservation..." : "Reserver"}
                                             </button>
                                         </div>
                                     </div>

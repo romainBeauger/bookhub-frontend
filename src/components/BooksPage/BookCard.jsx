@@ -51,12 +51,20 @@ function getAverageRating(book) {
     return Number.isFinite(rating) ? rating : 0;
 }
 
-export default function BookCard({ book, onBorrow, borrowing = false, view = "grid" }) {
+export default function BookCard({
+    book,
+    onBorrow,
+    borrowing = false,
+    onReserve,
+    reserving = false,
+    view = "grid",
+}) {
     const status = getStatus(book);
     const bookId = getBookId(book);
     const isAvailable = Number(book?.availableCopies ?? 0) > 0;
     const isBorrowDisabled = !isAvailable || borrowing;
     const borrowLabel = borrowing ? "Emprunt..." : isAvailable ? "Emprunter" : "Indisponible";
+    const reserveLabel = reserving ? "Reservation..." : "Reserver";
     const isListView = view === "list";
     const averageRating = getAverageRating(book);
 
@@ -117,8 +125,7 @@ export default function BookCard({ book, onBorrow, borrowing = false, view = "gr
 
                         </div>
 
-                        <div className="flex  gap-2.5 rounded-[20px] border border-slate-200 bg-slate-50 p-3.5">
-
+                        <div className="flex flex-wrap gap-2.5 rounded-[20px] border border-slate-200 bg-slate-50 p-3.5">
                             <button
                                 type="button"
                                 onClick={() => onBorrow?.(book)}
@@ -126,6 +133,15 @@ export default function BookCard({ book, onBorrow, borrowing = false, view = "gr
                                 className="rounded-xl border border-emerald-500 bg-white px-4 py-3 text-center text-sm font-semibold text-emerald-600 transition-colors duration-200 hover:bg-emerald-50 disabled:cursor-not-allowed disabled:border-slate-300 disabled:text-slate-400 disabled:hover:bg-white"
                             >
                                 {borrowLabel}
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={() => onReserve?.(book)}
+                                disabled={reserving}
+                                className="rounded-xl border border-amber-400 bg-white px-4 py-3 text-center text-sm font-semibold text-amber-700 transition-colors duration-200 hover:bg-amber-50 disabled:cursor-not-allowed disabled:border-slate-300 disabled:text-slate-400 disabled:hover:bg-white"
+                            >
+                                {reserveLabel}
                             </button>
 
                             <Link
@@ -179,7 +195,18 @@ export default function BookCard({ book, onBorrow, borrowing = false, view = "gr
                     )}
                 </div>
 
-                <div className="mt-auto pt-4 grid gap-3 sm:grid-cols-2">
+                <div className="mt-auto pt-4">
+                    <p className="text-sm font-medium text-slate-600">
+                        Exemplaires disponibles: {book?.availableCopies ?? 0}
+                    </p>
+                    {!isAvailable && (
+                        <span className="mt-2 inline-flex rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">
+                            Reservation utile: aucun exemplaire disponible
+                        </span>
+                    )}
+                </div>
+
+                <div className="mt-4 grid gap-3 sm:grid-cols-3">
                     <button
                         type="button"
                         onClick={() => onBorrow?.(book)}
@@ -187,6 +214,15 @@ export default function BookCard({ book, onBorrow, borrowing = false, view = "gr
                         className="rounded-xl border border-emerald-500 bg-white px-4 py-3 text-center text-sm font-semibold text-emerald-600 transition-colors duration-200 hover:bg-emerald-50 disabled:cursor-not-allowed disabled:border-slate-300 disabled:text-slate-400 disabled:hover:bg-white"
                     >
                         {borrowLabel}
+                    </button>
+
+                    <button
+                        type="button"
+                        onClick={() => onReserve?.(book)}
+                        disabled={reserving}
+                        className="rounded-xl border border-amber-400 bg-white px-4 py-3 text-center text-sm font-semibold text-amber-700 transition-colors duration-200 hover:bg-amber-50 disabled:cursor-not-allowed disabled:border-slate-300 disabled:text-slate-400 disabled:hover:bg-white"
+                    >
+                        {reserveLabel}
                     </button>
 
                     <Link

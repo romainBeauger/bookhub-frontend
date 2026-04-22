@@ -5,6 +5,19 @@ import ReviewCard from "../components/Reviews/ReviewCard.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import { deleteReview, getAllReviews, moderateReview } from "../services/bookService.js";
 import { getAllLoans, validateReturn } from "../services/loanService.js";
+import {
+    cancelReservation,
+    getAllReservations,
+    markReservationReady,
+    validateReservation,
+} from "../services/reservationService.js";
+import {
+    extractReservations,
+    formatReservationDate,
+    getReservationStatusClass,
+    getReservationStatusLabel,
+    sortReservationsByNewest,
+} from "../utils/reservations.js";
 
 function extractReviews(payload) {
     if (Array.isArray(payload)) {
@@ -149,15 +162,6 @@ function TabButton({ active, label, onClick }) {
     );
 }
 
-function PlaceholderPanel({ title, description }) {
-    return (
-        <section className="rounded-xl border border-slate-200 bg-white p-8">
-            <h2 className="text-lg font-semibold text-slate-800">{title}</h2>
-            <p className="mt-2 text-sm text-slate-500">{description}</p>
-        </section>
-    );
-}
-
 function LoanRow({ loan, loading, onValidate }) {
     const statusLabel = getLoanStatusLabel(loan?.status, loan?.isLate);
     const statusClassName = getLoanStatusClass(loan?.status, loan?.isLate);
@@ -211,18 +215,48 @@ function LoanRow({ loan, loading, onValidate }) {
     );
 }
 
+const RESERVATION_STATUS_OPTIONS = [
+    { value: "", label: "Tous les statuts" },
+    { value: "PENDING", label: "En attente" },
+    { value: "READY", label: "Pret a recuperer" },
+    { value: "VALIDATED", label: "Validee" },
+    { value: "CANCELLED", label: "Annulee" },
+];
+
+function getReservationUserDisplayName(reservation) {
+    return [reservation?.user?.firstName, reservation?.user?.lastName]
+        .filter(Boolean)
+        .join(" ")
+        .trim() || "Utilisateur inconnu";
+}
+
+function getReservationBookTitle(reservation) {
+    return reservation?.book?.title || "Livre inconnu";
+}
+
+function getReservationAvailableCopies(reservation) {
+    return Number(reservation?.book?.availableCopies ?? 0);
+}
+
 export default function DashboardPage() {
     const { user } = useAuth();
     const [navOpen, setNavOpen] = useState(false);
     const [reviews, setReviews] = useState([]);
     const [loans, setLoans] = useState([]);
+    const [reservations, setReservations] = useState([]);
     const [reviewsLoading, setReviewsLoading] = useState(true);
     const [loansLoading, setLoansLoading] = useState(true);
+    const [reservationsLoading, setReservationsLoading] = useState(true);
     const [reviewsError, setReviewsError] = useState("");
     const [loansError, setLoansError] = useState("");
+    const [reservationsError, setReservationsError] = useState("");
     const [activeTab, setActiveTab] = useState("reviews");
     const [activeFilter, setActiveFilter] = useState("all");
     const [processingId, setProcessingId] = useState(null);
+    const [reservationFilters, setReservationFilters] = useState({
+        status: "",
+        bookId: "",
+    });
 
     async function loadReviews() {
         setReviewsLoading(true);
@@ -252,9 +286,44 @@ export default function DashboardPage() {
         }
     }
 
+    async function loadReservations(nextFilters = reservationFilters) {
+        setReservationsLoading(true);
+        setReservationsError("");
+
+        try {
+            const response = await getAllReservations({
+                status: nextFilters.status || undefined,
+                bookId: nextFilters.bookId ? Number(nextFilters.bookId) : undefined,
+            });
+            setReservations(sortReservationsByNewest(extractReservations(response)));
+        } catch (err) {
+            setReservationsError(err.message || "Impossible de recuperer les reservations.");
+            setReservations([]);
+        } finally {
+            setReservationsLoading(false);
+        }
+    }
+
     useEffect(() => {
         loadReviews();
         loadLoans();
+
+        async function loadInitialReservations() {
+            setReservationsLoading(true);
+            setReservationsError("");
+
+            try {
+                const response = await getAllReservations();
+                setReservations(sortReservationsByNewest(extractReservations(response)));
+            } catch (err) {
+                setReservationsError(err.message || "Impossible de recuperer les reservations.");
+                setReservations([]);
+            } finally {
+                setReservationsLoading(false);
+            }
+        }
+
+        loadInitialReservations();
     }, []);
 
     const pendingCount = useMemo(
@@ -276,6 +345,14 @@ export default function DashboardPage() {
     const activeLoans = useMemo(
         () => loans.filter((loan) => ["ACTIVE", "OVERDUE", "RETURN_REQUESTED"].includes(loan?.status)),
         [loans]
+    );
+    const pendingReservations = useMemo(
+        () => reservations.filter((reservation) => reservation?.status === "PENDING"),
+        [reservations]
+    );
+    const readyReservations = useMemo(
+        () => reservations.filter((reservation) => reservation?.status === "READY"),
+        [reservations]
     );
 
     async function handleModerate(reviewId) {
@@ -325,6 +402,42 @@ export default function DashboardPage() {
             await loadLoans();
         } catch (err) {
             setLoansError(err.message || "Impossible de valider ce retour.");
+        } finally {
+            setProcessingId(null);
+        }
+    }
+
+    async function handleReservationFilterSubmit(event) {
+        event.preventDefault();
+        await loadReservations(reservationFilters);
+    }
+
+    async function handleReservationAction(reservation, action) {
+        const reservationId = reservation?.id;
+
+        if (!reservationId) {
+            return;
+        }
+
+        setProcessingId(`reservation-${reservationId}`);
+        setReservationsError("");
+
+        try {
+            if (action === "ready") {
+                await markReservationReady(reservationId);
+            }
+
+            if (action === "validate") {
+                await validateReservation(reservationId);
+            }
+
+            if (action === "cancel") {
+                await cancelReservation(reservationId);
+            }
+
+            await loadReservations(reservationFilters);
+        } catch (err) {
+            setReservationsError(err.message || "Impossible de mettre a jour cette reservation.");
         } finally {
             setProcessingId(null);
         }
@@ -526,10 +639,201 @@ export default function DashboardPage() {
                     )}
 
                     {activeTab === "reservations" && (
-                        <PlaceholderPanel
-                            title="Reservations de tous les utilisateurs"
-                            description="L'onglet est pret, mais aucun service de reservations n'est encore branche dans le front. Il faut un endpoint backend pour lister et gerer ces reservations."
-                        />
+                        <>
+                            <section className="grid gap-4 md:grid-cols-3">
+                                <StatCard label="Reservations listees" value={reservations.length} />
+                                <StatCard label="En attente" value={pendingReservations.length} tone="warning" />
+                                <StatCard label="Pret à recuperer" value={readyReservations.length} tone="success" />
+                            </section>
+
+                            <form
+                                onSubmit={handleReservationFilterSubmit}
+                                className="grid gap-4 rounded-2xl border border-slate-200 bg-white p-5 md:grid-cols-[1fr_1fr_auto]"
+                            >
+                                <div>
+                                    <label htmlFor="reservation-status" className="mb-2 block text-sm font-semibold text-slate-900">
+                                        Statut
+                                    </label>
+                                    <select
+                                        id="reservation-status"
+                                        value={reservationFilters.status}
+                                        onChange={(event) =>
+                                            setReservationFilters((current) => ({ ...current, status: event.target.value }))
+                                        }
+                                        className="h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none"
+                                    >
+                                        {RESERVATION_STATUS_OPTIONS.map((option) => (
+                                            <option key={option.value || "all"} value={option.value}>
+                                                {option.label}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label htmlFor="reservation-book-id" className="mb-2 block text-sm font-semibold text-slate-900">
+                                        Book ID
+                                    </label>
+                                    <input
+                                        id="reservation-book-id"
+                                        type="number"
+                                        min="1"
+                                        value={reservationFilters.bookId}
+                                        onChange={(event) =>
+                                            setReservationFilters((current) => ({ ...current, bookId: event.target.value }))
+                                        }
+                                        placeholder="Ex: 12"
+                                        className="h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none"
+                                    />
+                                </div>
+
+                                <div className="flex items-end gap-3">
+                                    <button
+                                        type="submit"
+                                        className="h-11 rounded-xl border border-slate-900 bg-slate-900 px-5 text-sm font-medium text-white"
+                                    >
+                                        Filtrer
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={async () => {
+                                            const resetFilters = { status: "", bookId: "" };
+                                            setReservationFilters(resetFilters);
+                                            await loadReservations(resetFilters);
+                                        }}
+                                        className="h-11 rounded-xl border border-slate-300 bg-white px-5 text-sm font-medium text-slate-700"
+                                    >
+                                        Reinitialiser
+                                    </button>
+                                </div>
+                            </form>
+
+                            {reservationsLoading && (
+                                <section className="rounded-xl border border-slate-200 bg-white p-8 text-sm text-slate-500">
+                                    Chargement des reservations...
+                                </section>
+                            )}
+
+                            {!reservationsLoading && reservationsError && (
+                                <section className="rounded-xl border border-red-200 bg-red-50 p-8 text-sm text-red-700">
+                                    {reservationsError}
+                                </section>
+                            )}
+
+                            {!reservationsLoading && !reservationsError && reservations.length === 0 && (
+                                <section className="rounded-xl border border-slate-200 bg-white p-8 text-sm text-slate-500">
+                                    Aucune reservation ne correspond a ces filtres.
+                                </section>
+                            )}
+
+                            {!reservationsLoading && !reservationsError && reservations.length > 0 && (
+                                <section className="space-y-4">
+                                    {reservations.map((reservation) => {
+                                        const isPending = reservation?.status === "PENDING";
+                                        const isReady = reservation?.status === "READY";
+                                        const isBusy = processingId === `reservation-${reservation.id}`;
+
+                                        return (
+                                            <article
+                                                key={reservation.id}
+                                                className="rounded-2xl border border-slate-200 bg-white p-5"
+                                            >
+                                                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                                                    <div className="space-y-3">
+                                                        <div>
+                                                            <p className="text-lg font-semibold text-slate-900">
+                                                                {getReservationBookTitle(reservation)}
+                                                            </p>
+                                                            <p className="mt-1 text-sm text-slate-500">
+                                                                {getReservationUserDisplayName(reservation)} - {reservation?.user?.email || "Email inconnu"}
+                                                            </p>
+                                                        </div>
+
+                                                        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+                                                            <div>
+                                                                <p className="text-xs uppercase tracking-[0.14em] text-slate-500">
+                                                                    Statut
+                                                                </p>
+                                                                <span className={`mt-1 inline-block rounded-full px-3 py-1 text-xs font-semibold ${
+                                                                    getReservationStatusClass(reservation?.status)
+                                                                }`}>
+                                                                    {getReservationStatusLabel(reservation?.status)}
+                                                                </span>
+                                                            </div>
+                                                            <div>
+                                                                <p className="text-xs uppercase tracking-[0.14em] text-slate-500">
+                                                                    Position
+                                                                </p>
+                                                                <p className="mt-1 text-sm font-medium text-slate-800">
+                                                                    {reservation?.queuePosition ?? "-"}
+                                                                </p>
+                                                            </div>
+                                                            <div>
+                                                                <p className="text-xs uppercase tracking-[0.14em] text-slate-500">
+                                                                    Date
+                                                                </p>
+                                                                <p className="mt-1 text-sm font-medium text-slate-800">
+                                                                    {formatReservationDate(reservation?.reservationDate)}
+                                                                </p>
+                                                            </div>
+                                                            <div>
+                                                                <p className="text-xs uppercase tracking-[0.14em] text-slate-500">
+                                                                    Disponibilite
+                                                                </p>
+                                                                <p className="mt-1 text-sm font-medium text-slate-800">
+                                                                    {getReservationAvailableCopies(reservation)} exemplaire(s)
+                                                                </p>
+                                                            </div>
+                                                            <div>
+                                                                <p className="text-xs uppercase tracking-[0.14em] text-slate-500">
+                                                                    Book ID
+                                                                </p>
+                                                                <p className="mt-1 text-sm font-medium text-slate-800">
+                                                                    {reservation?.bookId ?? "-"}
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="flex shrink-0 flex-wrap gap-2">
+                                                        {isPending && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handleReservationAction(reservation, "ready")}
+                                                                disabled={isBusy}
+                                                                className="rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+                                                            >
+                                                                {isBusy ? "Traitement..." : "Marquer prete"}
+                                                            </button>
+                                                        )}
+                                                        {isReady && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handleReservationAction(reservation, "validate")}
+                                                                disabled={isBusy}
+                                                                className="rounded-xl border border-sky-300 bg-sky-50 px-4 py-2 text-sm font-medium text-sky-700 disabled:cursor-not-allowed disabled:opacity-60"
+                                                            >
+                                                                {isBusy ? "Traitement..." : "Valider"}
+                                                            </button>
+                                                        )}
+                                                        {(isPending || isReady) && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handleReservationAction(reservation, "cancel")}
+                                                                disabled={isBusy}
+                                                                className="rounded-xl border border-red-300 bg-red-50 px-4 py-2 text-sm font-medium text-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+                                                            >
+                                                                {isBusy ? "Traitement..." : "Annuler"}
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </article>
+                                        );
+                                    })}
+                                </section>
+                            )}
+                        </>
                     )}
                 </main>
             </div>
