@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
+import AdminUsersSection from "../components/AdminUsers/AdminUsersSection.jsx";
 import BooksSidebar from "../components/BooksPage/BooksSidebar.jsx";
 import HeaderComponent from "../components/Header/HeaderComponent.jsx";
 import ReviewCard from "../components/Reviews/ReviewCard.jsx";
@@ -22,7 +23,7 @@ import {
     validateReservation,
 } from "../services/reservationService.js";
 import { getCatalogueStats, getLoanStats } from "../services/statsService.js";
-import { hasRole } from "../utils/auth.js";
+import { hasLibrarianAccess, hasRole } from "../utils/auth.js";
 import {
     extractReservations,
     formatReservationDate,
@@ -31,13 +32,21 @@ import {
     sortReservationsByNewest,
 } from "../utils/reservations.js";
 
-const DASHBOARD_TABS = [
-    { id: "dashboard", label: "Dashboard" },
-    { id: "books", label: "Gestion livres" },
-    { id: "loan-returns", label: "Retours d'emprunt" },
-    { id: "reservations", label: "Reservations" },
-    { id: "reviews", label: "Avis" },
-];
+function getDashboardTabs(isAdmin) {
+    const tabs = [
+        { id: "dashboard", label: "Dashboard" },
+        { id: "books", label: "Gestion livres" },
+        { id: "loan-returns", label: "Retours d'emprunt" },
+        { id: "reservations", label: "Reservations" },
+        { id: "reviews", label: "Avis" },
+    ];
+
+    if (isAdmin) {
+        tabs.push({ id: "users", label: "Gestion utilisateurs" });
+    }
+
+    return tabs;
+}
 
 const RESERVATION_STATUS_OPTIONS = [
     { value: "", label: "Tous les statuts" },
@@ -47,9 +56,9 @@ const RESERVATION_STATUS_OPTIONS = [
     { value: "CANCELLED", label: "Annulee" },
 ];
 
-function readActiveTab(searchParams) {
+function readActiveTab(searchParams, tabs) {
     const requestedTab = searchParams.get("tab");
-    const exists = DASHBOARD_TABS.some((tab) => tab.id === requestedTab);
+    const exists = tabs.some((tab) => tab.id === requestedTab);
 
     return exists ? requestedTab : "dashboard";
 }
@@ -629,9 +638,12 @@ export default function DashboardPage() {
         userName: "",
     });
 
-    const isLibrarian = hasRole(user, "ROLE_LIBRARIAN");
-    const canSeeCatalogueStats = hasRole(user, "ROLE_LIBRARIAN") || hasRole(user, "ROLE_ADMIN");
-    const activeTab = readActiveTab(searchParams);
+    const isAdmin = hasRole(user, "ROLE_ADMIN");
+    const isLibrarian = hasLibrarianAccess(user);
+    const canSeeCatalogueStats = isLibrarian;
+    const dashboardTitle = isAdmin ? "Gestion admin" : "Gestion librairie";
+    const dashboardTabs = useMemo(() => getDashboardTabs(isAdmin), [isAdmin]);
+    const activeTab = readActiveTab(searchParams, dashboardTabs);
 
     function setActiveTab(nextTab) {
         const nextSearchParams = new URLSearchParams(searchParams);
@@ -767,12 +779,15 @@ export default function DashboardPage() {
     }
 
     useEffect(() => {
-        if (!searchParams.get("tab")) {
+        const requestedTab = searchParams.get("tab");
+        const hasValidTab = dashboardTabs.some((tab) => tab.id === requestedTab);
+
+        if (!requestedTab || !hasValidTab) {
             const nextSearchParams = new URLSearchParams(searchParams);
             nextSearchParams.set("tab", "dashboard");
             setSearchParams(nextSearchParams, { replace: true });
         }
-    }, [searchParams, setSearchParams]);
+    }, [dashboardTabs, searchParams, setSearchParams]);
 
     useEffect(() => {
         loadReviews();
@@ -1019,7 +1034,7 @@ export default function DashboardPage() {
             />
 
             <HeaderComponent
-                subtitle="Gestion librairie"
+                subtitle={dashboardTitle}
                 user={user}
                 onMenuToggle={() => setNavOpen((currentValue) => !currentValue)}
             />
@@ -1033,14 +1048,14 @@ export default function DashboardPage() {
 
                 <main className="space-y-6 p-6">
                     <div>
-                        <h1 className="text-2xl font-bold text-slate-800">Gestion librairie</h1>
+                        <h1 className="text-2xl font-bold text-slate-800">{dashboardTitle}</h1>
                         <p className="text-sm text-slate-500">
                             Dashboard staff, suivi du catalogue, des emprunts, des reservations et des avis.
                         </p>
                     </div>
 
                     <section className="flex flex-wrap gap-3">
-                        {DASHBOARD_TABS.map((tab) => (
+                        {dashboardTabs.map((tab) => (
                             <TabButton
                                 key={tab.id}
                                 active={activeTab === tab.id}
@@ -1052,47 +1067,6 @@ export default function DashboardPage() {
 
                     {activeTab === "dashboard" && (
                         <>
-                            <section className="grid gap-4 xl:grid-cols-[1.4fr_1fr]">
-                                <article className="rounded-2xl border border-slate-200 bg-white p-6">
-                                    <p className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-500">
-                                        Vue rapide
-                                    </p>
-                                    <h2 className="mt-2 text-2xl font-bold text-slate-900">
-                                        Statistiques dashboard en premiere ligne
-                                    </h2>
-                                    <p className="mt-2 max-w-2xl text-sm text-slate-500">
-                                        Les KPIs viennent directement des endpoints `/api/stats/loans` et `/api/stats/catalogue`.
-                                    </p>
-
-                                    <div className="mt-5 flex flex-wrap gap-3">
-                                        <QuickActionButton label="Gestion livres" tone="dark" onClick={() => setActiveTab("books")} />
-                                        <QuickActionButton label="Retours d'emprunt" tone="warning" onClick={() => setActiveTab("loan-returns")} />
-                                        <QuickActionButton label="Reservations" tone="success" onClick={() => setActiveTab("reservations")} />
-                                        <QuickActionButton label="Avis" onClick={() => setActiveTab("reviews")} />
-                                    </div>
-                                </article>
-
-                                <article className="rounded-2xl border border-slate-200 bg-white p-6">
-                                    <p className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-500">
-                                        Acces
-                                    </p>
-                                    <div className="mt-4 space-y-3 text-sm text-slate-600">
-                                        <p>
-                                            Statistiques catalogue: {canSeeCatalogueStats ? "actives" : "indisponibles"}.
-                                        </p>
-                                        <p>
-                                            Statistiques emprunts: {isLibrarian ? "actives" : "ROLE_LIBRARIAN requis"}.
-                                        </p>
-                                        <Link
-                                            to="/books"
-                                            className="inline-flex rounded-xl border border-slate-300 px-4 py-2 font-medium text-slate-700 transition-colors hover:bg-slate-50"
-                                        >
-                                            Ouvrir le catalogue
-                                        </Link>
-                                    </div>
-                                </article>
-                            </section>
-
                             <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                                 <StatCard
                                     label="Emprunts actifs"
@@ -1598,6 +1572,10 @@ export default function DashboardPage() {
                                 </section>
                             )}
                         </>
+                    )}
+
+                    {activeTab === "users" && isAdmin && (
+                        <AdminUsersSection currentUser={user} />
                     )}
                 </main>
             </div>
