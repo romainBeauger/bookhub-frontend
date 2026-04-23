@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import BooksSidebar from "../components/BooksPage/BooksSidebar.jsx";
 import HeaderComponent from "../components/Header/HeaderComponent.jsx";
 import ReviewCard from "../components/Reviews/ReviewCard.jsx";
@@ -11,6 +12,8 @@ import {
     markReservationReady,
     validateReservation,
 } from "../services/reservationService.js";
+import { getCatalogueStats, getLoanStats } from "../services/statsService.js";
+import { hasRole } from "../utils/auth.js";
 import {
     extractReservations,
     formatReservationDate,
@@ -18,6 +21,29 @@ import {
     getReservationStatusLabel,
     sortReservationsByNewest,
 } from "../utils/reservations.js";
+
+const DASHBOARD_TABS = [
+    { id: "dashboard", label: "Dashboard" },
+    { id: "books", label: "Gestion livres" },
+    { id: "loan-returns", label: "Retours d'emprunt" },
+    { id: "reservations", label: "Reservations" },
+    { id: "reviews", label: "Avis" },
+];
+
+const RESERVATION_STATUS_OPTIONS = [
+    { value: "", label: "Tous les statuts" },
+    { value: "PENDING", label: "En attente" },
+    { value: "READY", label: "Pret a recuperer" },
+    { value: "VALIDATED", label: "Validee" },
+    { value: "CANCELLED", label: "Annulee" },
+];
+
+function readActiveTab(searchParams) {
+    const requestedTab = searchParams.get("tab");
+    const exists = DASHBOARD_TABS.some((tab) => tab.id === requestedTab);
+
+    return exists ? requestedTab : "dashboard";
+}
 
 function extractReviews(payload) {
     if (Array.isArray(payload)) {
@@ -117,6 +143,21 @@ function getLoanUserDisplayName(loan) {
     return [loan?.user?.firstName, loan?.user?.lastName].filter(Boolean).join(" ").trim();
 }
 
+function getReservationUserDisplayName(reservation) {
+    return [reservation?.user?.firstName, reservation?.user?.lastName]
+        .filter(Boolean)
+        .join(" ")
+        .trim() || "Utilisateur inconnu";
+}
+
+function getReservationBookTitle(reservation) {
+    return reservation?.book?.title || "Livre inconnu";
+}
+
+function getReservationAvailableCopies(reservation) {
+    return Number(reservation?.book?.availableCopies ?? 0);
+}
+
 function formatDate(value) {
     if (!value) {
         return "Non renseignee";
@@ -136,7 +177,9 @@ function StatCard({ label, value, tone = "default" }) {
         ? "border-amber-200 bg-amber-50 text-amber-700"
         : tone === "success"
             ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-            : "border-slate-200 bg-white text-slate-800";
+            : tone === "danger"
+                ? "border-red-200 bg-red-50 text-red-700"
+                : "border-slate-200 bg-white text-slate-800";
 
     return (
         <article className={`rounded-2xl border p-5 ${toneClassName}`}>
@@ -156,6 +199,26 @@ function TabButton({ active, label, onClick }) {
                     ? "border-slate-900 bg-slate-900 text-white"
                     : "border-slate-300 bg-white text-slate-700"
             }`}
+        >
+            {label}
+        </button>
+    );
+}
+
+function QuickActionButton({ label, onClick, tone = "default" }) {
+    const toneClassName = tone === "dark"
+        ? "border-slate-900 bg-slate-900 text-white"
+        : tone === "success"
+            ? "border-emerald-300 bg-emerald-50 text-emerald-700"
+            : tone === "warning"
+                ? "border-amber-300 bg-amber-50 text-amber-700"
+                : "border-slate-300 bg-white text-slate-700";
+
+    return (
+        <button
+            type="button"
+            onClick={onClick}
+            className={`rounded-xl border px-4 py-3 text-sm font-medium transition-colors ${toneClassName}`}
         >
             {label}
         </button>
@@ -215,42 +278,99 @@ function LoanRow({ loan, loading, onValidate }) {
     );
 }
 
-const RESERVATION_STATUS_OPTIONS = [
-    { value: "", label: "Tous les statuts" },
-    { value: "PENDING", label: "En attente" },
-    { value: "READY", label: "Pret a recuperer" },
-    { value: "VALIDATED", label: "Validee" },
-    { value: "CANCELLED", label: "Annulee" },
-];
-
-function getReservationUserDisplayName(reservation) {
-    return [reservation?.user?.firstName, reservation?.user?.lastName]
-        .filter(Boolean)
-        .join(" ")
-        .trim() || "Utilisateur inconnu";
+function OverdueLoansTable({ rows }) {
+    return (
+        <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white">
+            <table className="min-w-full divide-y divide-slate-200 text-sm">
+                <thead className="bg-slate-50 text-left text-slate-600">
+                    <tr>
+                        <th className="px-4 py-3 font-semibold">Lecteur</th>
+                        <th className="px-4 py-3 font-semibold">Livre</th>
+                        <th className="px-4 py-3 font-semibold">Date d'emprunt</th>
+                        <th className="px-4 py-3 font-semibold">Date limite</th>
+                    </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                    {rows.map((loan) => (
+                        <tr key={loan.id} className="text-slate-700">
+                            <td className="px-4 py-3">
+                                <p className="font-medium text-slate-900">{loan.userName}</p>
+                                <p className="text-xs text-slate-500">User ID: {loan.userId}</p>
+                            </td>
+                            <td className="px-4 py-3">
+                                <p className="font-medium text-slate-900">{loan.bookTitle}</p>
+                                <p className="text-xs text-slate-500">Book ID: {loan.bookId}</p>
+                            </td>
+                            <td className="px-4 py-3">{formatDate(loan.loanDate)}</td>
+                            <td className="px-4 py-3 font-medium text-red-600">{formatDate(loan.dueDate)}</td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+        </div>
+    );
 }
 
-function getReservationBookTitle(reservation) {
-    return reservation?.book?.title || "Livre inconnu";
+function TopBorrowedBooksTable({ rows }) {
+    return (
+        <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white">
+            <table className="min-w-full divide-y divide-slate-200 text-sm">
+                <thead className="bg-slate-50 text-left text-slate-600">
+                    <tr>
+                        <th className="px-4 py-3 font-semibold">Livre</th>
+                        <th className="px-4 py-3 font-semibold">Auteur</th>
+                        <th className="px-4 py-3 font-semibold">Emprunts</th>
+                    </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                    {rows.map((book) => (
+                        <tr key={book.id} className="text-slate-700">
+                            <td className="px-4 py-3 font-medium text-slate-900">{book.title}</td>
+                            <td className="px-4 py-3">{book.author}</td>
+                            <td className="px-4 py-3">{book.loanCount}</td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+        </div>
+    );
 }
 
-function getReservationAvailableCopies(reservation) {
-    return Number(reservation?.book?.availableCopies ?? 0);
+function EmptyState({ message }) {
+    return (
+        <section className="rounded-xl border border-slate-200 bg-white p-8 text-sm text-slate-500">
+            {message}
+        </section>
+    );
+}
+
+function ErrorState({ message }) {
+    return (
+        <section className="rounded-xl border border-red-200 bg-red-50 p-8 text-sm text-red-700">
+            {message}
+        </section>
+    );
 }
 
 export default function DashboardPage() {
     const { user } = useAuth();
     const [navOpen, setNavOpen] = useState(false);
+    const [searchParams, setSearchParams] = useSearchParams();
     const [reviews, setReviews] = useState([]);
     const [loans, setLoans] = useState([]);
     const [reservations, setReservations] = useState([]);
+    const [loanStats, setLoanStats] = useState(null);
+    const [catalogueStats, setCatalogueStats] = useState(null);
     const [reviewsLoading, setReviewsLoading] = useState(true);
     const [loansLoading, setLoansLoading] = useState(true);
     const [reservationsLoading, setReservationsLoading] = useState(true);
+    const [loanStatsLoading, setLoanStatsLoading] = useState(false);
+    const [catalogueStatsLoading, setCatalogueStatsLoading] = useState(false);
     const [reviewsError, setReviewsError] = useState("");
     const [loansError, setLoansError] = useState("");
     const [reservationsError, setReservationsError] = useState("");
-    const [activeTab, setActiveTab] = useState("reviews");
+    const [loanStatsError, setLoanStatsError] = useState("");
+    const [catalogueStatsError, setCatalogueStatsError] = useState("");
     const [activeFilter, setActiveFilter] = useState("all");
     const [processingId, setProcessingId] = useState(null);
     const [reservationFilters, setReservationFilters] = useState({
@@ -258,6 +378,16 @@ export default function DashboardPage() {
         bookId: "",
         userName: "",
     });
+
+    const isLibrarian = hasRole(user, "ROLE_LIBRARIAN");
+    const canSeeCatalogueStats = hasRole(user, "ROLE_LIBRARIAN") || hasRole(user, "ROLE_ADMIN");
+    const activeTab = readActiveTab(searchParams);
+
+    function setActiveTab(nextTab) {
+        const nextSearchParams = new URLSearchParams(searchParams);
+        nextSearchParams.set("tab", nextTab);
+        setSearchParams(nextSearchParams, { replace: true });
+    }
 
     async function loadReviews() {
         setReviewsLoading(true);
@@ -306,27 +436,66 @@ export default function DashboardPage() {
         }
     }
 
+    async function loadLoanStats() {
+        if (!isLibrarian) {
+            setLoanStats(null);
+            setLoanStatsError("");
+            setLoanStatsLoading(false);
+            return;
+        }
+
+        setLoanStatsLoading(true);
+        setLoanStatsError("");
+
+        try {
+            const response = await getLoanStats();
+            setLoanStats(response || null);
+        } catch (err) {
+            setLoanStats(null);
+            setLoanStatsError(err.message || "Impossible de recuperer les statistiques d'emprunts.");
+        } finally {
+            setLoanStatsLoading(false);
+        }
+    }
+
+    async function loadCatalogueStats() {
+        if (!canSeeCatalogueStats) {
+            setCatalogueStats(null);
+            setCatalogueStatsError("");
+            setCatalogueStatsLoading(false);
+            return;
+        }
+
+        setCatalogueStatsLoading(true);
+        setCatalogueStatsError("");
+
+        try {
+            const response = await getCatalogueStats();
+            setCatalogueStats(response || null);
+        } catch (err) {
+            setCatalogueStats(null);
+            setCatalogueStatsError(err.message || "Impossible de recuperer les statistiques du catalogue.");
+        } finally {
+            setCatalogueStatsLoading(false);
+        }
+    }
+
+    useEffect(() => {
+        if (!searchParams.get("tab")) {
+            const nextSearchParams = new URLSearchParams(searchParams);
+            nextSearchParams.set("tab", "dashboard");
+            setSearchParams(nextSearchParams, { replace: true });
+        }
+    }, [searchParams, setSearchParams]);
+
     useEffect(() => {
         loadReviews();
         loadLoans();
-
-        async function loadInitialReservations() {
-            setReservationsLoading(true);
-            setReservationsError("");
-
-            try {
-                const response = await getAllReservations();
-                setReservations(sortReservationsByNewest(extractReservations(response)));
-            } catch (err) {
-                setReservationsError(err.message || "Impossible de recuperer les reservations.");
-                setReservations([]);
-            } finally {
-                setReservationsLoading(false);
-            }
-        }
-
-        loadInitialReservations();
-    }, []);
+        loadReservations();
+        loadLoanStats();
+        loadCatalogueStats();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isLibrarian, canSeeCatalogueStats]);
 
     const pendingCount = useMemo(
         () => reviews.filter((review) => review?.isModerated === false).length,
@@ -356,6 +525,8 @@ export default function DashboardPage() {
         () => reservations.filter((reservation) => reservation?.status === "READY"),
         [reservations]
     );
+    const overdueList = useMemo(() => loanStats?.overdueList || [], [loanStats]);
+    const topBorrowedBooks = useMemo(() => catalogueStats?.topBorrowedBooks || [], [catalogueStats]);
 
     async function handleModerate(reviewId) {
         setProcessingId(reviewId);
@@ -401,7 +572,7 @@ export default function DashboardPage() {
 
         try {
             await validateReturn(loanId);
-            await loadLoans();
+            await Promise.all([loadLoans(), loadLoanStats()]);
         } catch (err) {
             setLoansError(err.message || "Impossible de valider ce retour.");
         } finally {
@@ -437,7 +608,7 @@ export default function DashboardPage() {
                 await cancelReservation(reservationId);
             }
 
-            await loadReservations(reservationFilters);
+            await Promise.all([loadReservations(reservationFilters), loadCatalogueStats()]);
         } catch (err) {
             setReservationsError(err.message || "Impossible de mettre a jour cette reservation.");
         } finally {
@@ -448,7 +619,7 @@ export default function DashboardPage() {
     return (
         <div className="min-h-screen bg-[#f2f2f2]">
             <HeaderComponent
-                subtitle="Dashboard staff - Moderations"
+                subtitle="Gestion librairie"
                 user={user}
                 onMenuToggle={() => setNavOpen((currentValue) => !currentValue)}
             />
@@ -462,106 +633,201 @@ export default function DashboardPage() {
 
                 <main className="space-y-6 p-6">
                     <div>
-                        <h1 className="text-2xl font-bold text-slate-800">Moderations</h1>
+                        <h1 className="text-2xl font-bold text-slate-800">Gestion librairie</h1>
                         <p className="text-sm text-slate-500">
-                            Suivez les avis, les retours d'emprunt utilisateurs et les reservations.
+                            Dashboard staff, suivi du catalogue, des emprunts, des reservations et des avis.
                         </p>
                     </div>
 
                     <section className="flex flex-wrap gap-3">
-                        <TabButton active={activeTab === "reviews"} label="Avis" onClick={() => setActiveTab("reviews")} />
-                        <TabButton
-                            active={activeTab === "loan-returns"}
-                            label="Retours d'emprunt utilisateur"
-                            onClick={() => setActiveTab("loan-returns")}
-                        />
-                        <TabButton
-                            active={activeTab === "reservations"}
-                            label="Reservations"
-                            onClick={() => setActiveTab("reservations")}
-                        />
+                        {DASHBOARD_TABS.map((tab) => (
+                            <TabButton
+                                key={tab.id}
+                                active={activeTab === tab.id}
+                                label={tab.label}
+                                onClick={() => setActiveTab(tab.id)}
+                            />
+                        ))}
                     </section>
 
-                    {activeTab === "reviews" && (
+                    {activeTab === "dashboard" && (
                         <>
-                            <section className="grid gap-4 md:grid-cols-3">
-                                <StatCard label="Total avis" value={reviews.length} />
-                                <StatCard label="En attente de verification" value={pendingCount} tone="warning" />
-                                <StatCard label="Avis confirmes" value={confirmedCount} tone="success" />
+                            <section className="grid gap-4 xl:grid-cols-[1.4fr_1fr]">
+                                <article className="rounded-2xl border border-slate-200 bg-white p-6">
+                                    <p className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-500">
+                                        Vue rapide
+                                    </p>
+                                    <h2 className="mt-2 text-2xl font-bold text-slate-900">
+                                        Statistiques dashboard en premiere ligne
+                                    </h2>
+                                    <p className="mt-2 max-w-2xl text-sm text-slate-500">
+                                        Les KPIs viennent directement des endpoints `/api/stats/loans` et `/api/stats/catalogue`.
+                                    </p>
+
+                                    <div className="mt-5 flex flex-wrap gap-3">
+                                        <QuickActionButton label="Gestion livres" tone="dark" onClick={() => setActiveTab("books")} />
+                                        <QuickActionButton label="Retours d'emprunt" tone="warning" onClick={() => setActiveTab("loan-returns")} />
+                                        <QuickActionButton label="Reservations" tone="success" onClick={() => setActiveTab("reservations")} />
+                                        <QuickActionButton label="Avis" onClick={() => setActiveTab("reviews")} />
+                                    </div>
+                                </article>
+
+                                <article className="rounded-2xl border border-slate-200 bg-white p-6">
+                                    <p className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-500">
+                                        Acces
+                                    </p>
+                                    <div className="mt-4 space-y-3 text-sm text-slate-600">
+                                        <p>
+                                            Statistiques catalogue: {canSeeCatalogueStats ? "actives" : "indisponibles"}.
+                                        </p>
+                                        <p>
+                                            Statistiques emprunts: {isLibrarian ? "actives" : "ROLE_LIBRARIAN requis"}.
+                                        </p>
+                                        <Link
+                                            to="/books"
+                                            className="inline-flex rounded-xl border border-slate-300 px-4 py-2 font-medium text-slate-700 transition-colors hover:bg-slate-50"
+                                        >
+                                            Ouvrir le catalogue
+                                        </Link>
+                                    </div>
+                                </article>
+                            </section>
+
+                            <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                                <StatCard
+                                    label="Emprunts actifs"
+                                    value={loanStatsLoading ? "..." : loanStats?.activeLoans ?? "-"}
+                                />
+                                <StatCard
+                                    label="Emprunts en retard"
+                                    value={loanStatsLoading ? "..." : loanStats?.lateLoans ?? "-"}
+                                    tone="danger"
+                                />
+                                <StatCard
+                                    label="Total livres"
+                                    value={catalogueStatsLoading ? "..." : catalogueStats?.totalBooks ?? "-"}
+                                />
+                                <StatCard
+                                    label="Total reservations"
+                                    value={catalogueStatsLoading ? "..." : catalogueStats?.totalReservations ?? "-"}
+                                />
+                                <StatCard
+                                    label="Reservations en cours"
+                                    value={catalogueStatsLoading ? "..." : catalogueStats?.currentReservations ?? "-"}
+                                    tone="warning"
+                                />
+                                <StatCard
+                                    label="Reservations passees"
+                                    value={catalogueStatsLoading ? "..." : catalogueStats?.pastReservations ?? "-"}
+                                    tone="success"
+                                />
+                            </section>
+
+                            {loanStatsError && <ErrorState message={loanStatsError} />}
+                            {catalogueStatsError && <ErrorState message={catalogueStatsError} />}
+
+                            <section className="grid gap-6 xl:grid-cols-2">
+                                <div className="space-y-4">
+                                    <div className="flex items-center justify-between">
+                                        <h2 className="text-lg font-semibold text-slate-800">Emprunts en retard</h2>
+                                        <span className="rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-red-700">
+                                            {loanStatsLoading ? "..." : overdueList.length}
+                                        </span>
+                                    </div>
+
+                                    {!isLibrarian && (
+                                        <EmptyState message="Cette section est reservee aux bibliothecaires." />
+                                    )}
+
+                                    {isLibrarian && loanStatsLoading && (
+                                        <EmptyState message="Chargement des emprunts en retard..." />
+                                    )}
+
+                                    {isLibrarian && !loanStatsLoading && !loanStatsError && overdueList.length === 0 && (
+                                        <EmptyState message="Aucun emprunt en retard pour le moment." />
+                                    )}
+
+                                    {isLibrarian && !loanStatsLoading && !loanStatsError && overdueList.length > 0 && (
+                                        <OverdueLoansTable rows={overdueList} />
+                                    )}
+                                </div>
+
+                                <div className="space-y-4">
+                                    <div className="flex items-center justify-between">
+                                        <h2 className="text-lg font-semibold text-slate-800">Livres les plus empruntes</h2>
+                                        <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
+                                            {catalogueStatsLoading ? "..." : topBorrowedBooks.length}
+                                        </span>
+                                    </div>
+
+                                    {catalogueStatsLoading && (
+                                        <EmptyState message="Chargement des livres les plus empruntes..." />
+                                    )}
+
+                                    {!catalogueStatsLoading && !catalogueStatsError && topBorrowedBooks.length === 0 && (
+                                        <EmptyState message="Aucune statistique de top emprunts disponible." />
+                                    )}
+
+                                    {!catalogueStatsLoading && !catalogueStatsError && topBorrowedBooks.length > 0 && (
+                                        <TopBorrowedBooksTable rows={topBorrowedBooks} />
+                                    )}
+                                </div>
+                            </section>
+                        </>
+                    )}
+
+                    {activeTab === "books" && (
+                        <>
+                            <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                                <StatCard
+                                    label="Livres au catalogue"
+                                    value={catalogueStatsLoading ? "..." : catalogueStats?.totalBooks ?? "-"}
+                                />
+                                <StatCard
+                                    label="Reservations totales"
+                                    value={catalogueStatsLoading ? "..." : catalogueStats?.totalReservations ?? "-"}
+                                />
+                                <StatCard
+                                    label="Reservations actives"
+                                    value={catalogueStatsLoading ? "..." : catalogueStats?.currentReservations ?? "-"}
+                                    tone="warning"
+                                />
+                                <StatCard
+                                    label="Reservations historiques"
+                                    value={catalogueStatsLoading ? "..." : catalogueStats?.pastReservations ?? "-"}
+                                    tone="success"
+                                />
                             </section>
 
                             <section className="flex flex-wrap gap-3">
-                                {[
-                                    { id: "all", label: "Toutes" },
-                                    { id: "pending", label: "En attente" },
-                                    { id: "confirmed", label: "Confirmees" },
-                                ].map((filterOption) => (
-                                    <button
-                                        key={filterOption.id}
-                                        type="button"
-                                        onClick={() => setActiveFilter(filterOption.id)}
-                                        className={`rounded-xl border px-4 py-2 text-sm font-medium ${
-                                            activeFilter === filterOption.id
-                                                ? "border-slate-900 bg-slate-900 text-white"
-                                                : "border-slate-300 bg-white text-slate-700"
-                                        }`}
-                                    >
-                                        {filterOption.label}
-                                    </button>
-                                ))}
+                                <Link
+                                    to="/books"
+                                    className="rounded-xl border border-slate-900 bg-slate-900 px-4 py-3 text-sm font-medium text-white"
+                                >
+                                    Aller au catalogue
+                                </Link>
+                                <QuickActionButton label="Retour dashboard" onClick={() => setActiveTab("dashboard")} />
                             </section>
 
-                            {reviewsLoading && (
-                                <section className="rounded-xl border border-slate-200 bg-white p-8 text-sm text-slate-500">
-                                    Chargement des avis...
-                                </section>
+                            {catalogueStatsError && <ErrorState message={catalogueStatsError} />}
+
+                            {catalogueStatsLoading && (
+                                <EmptyState message="Chargement de la gestion livres..." />
                             )}
 
-                            {!reviewsLoading && reviewsError && (
-                                <section className="rounded-xl border border-red-200 bg-red-50 p-8 text-sm text-red-700">
-                                    {reviewsError}
-                                </section>
+                            {!catalogueStatsLoading && !catalogueStatsError && topBorrowedBooks.length === 0 && (
+                                <EmptyState message="Aucun livre remonte dans les statistiques du catalogue." />
                             )}
 
-                            {!reviewsLoading && !reviewsError && filteredReviews.length === 0 && (
-                                <section className="rounded-xl border border-slate-200 bg-white p-8 text-sm text-slate-500">
-                                    Aucun avis a afficher pour ce filtre.
-                                </section>
-                            )}
-
-                            {!reviewsLoading && !reviewsError && filteredReviews.length > 0 && (
+                            {!catalogueStatsLoading && !catalogueStatsError && topBorrowedBooks.length > 0 && (
                                 <section className="space-y-4">
-                                    {filteredReviews.map((review) => (
-                                        <ReviewCard
-                                            key={review.id}
-                                            review={review}
-                                            currentUserId={user?.id}
-                                            showBookTitle
-                                            showReviewerName
-                                            actions={
-                                                <>
-                                                    {!review?.isModerated && (
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => handleModerate(review.id)}
-                                                            disabled={processingId === review.id}
-                                                            className="rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
-                                                        >
-                                                            Confirmer
-                                                        </button>
-                                                    )}
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => handleDelete(review.id)}
-                                                        disabled={processingId === review.id}
-                                                        className="rounded-xl border border-red-300 bg-red-50 px-4 py-2 text-sm font-medium text-red-700 disabled:cursor-not-allowed disabled:opacity-60"
-                                                    >
-                                                        Supprimer
-                                                    </button>
-                                                </>
-                                            }
-                                        />
-                                    ))}
+                                    <div className="flex items-center justify-between">
+                                        <h2 className="text-lg font-semibold text-slate-800">Top 5 des livres les plus empruntes</h2>
+                                        <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
+                                            {topBorrowedBooks.length}
+                                        </span>
+                                    </div>
+                                    <TopBorrowedBooksTable rows={topBorrowedBooks} />
                                 </section>
                             )}
                         </>
@@ -569,22 +835,18 @@ export default function DashboardPage() {
 
                     {activeTab === "loan-returns" && (
                         <>
-                            <section className="grid gap-4 md:grid-cols-2">
+                            <section className="grid gap-4 md:grid-cols-3">
                                 <StatCard label="Retours a valider" value={returnRequests.length} tone="warning" />
                                 <StatCard label="Emprunts en cours" value={activeLoans.length} />
+                                <StatCard
+                                    label="En retard"
+                                    value={loanStatsLoading ? "..." : loanStats?.lateLoans ?? overdueList.length}
+                                    tone="danger"
+                                />
                             </section>
 
-                            {loansLoading && (
-                                <section className="rounded-xl border border-slate-200 bg-white p-8 text-sm text-slate-500">
-                                    Chargement des emprunts...
-                                </section>
-                            )}
-
-                            {!loansLoading && loansError && (
-                                <section className="rounded-xl border border-red-200 bg-red-50 p-8 text-sm text-red-700">
-                                    {loansError}
-                                </section>
-                            )}
+                            {loansLoading && <EmptyState message="Chargement des emprunts..." />}
+                            {!loansLoading && loansError && <ErrorState message={loansError} />}
 
                             {!loansLoading && !loansError && (
                                 <>
@@ -597,9 +859,7 @@ export default function DashboardPage() {
                                         </div>
 
                                         {returnRequests.length === 0 && (
-                                            <section className="rounded-xl border border-slate-200 bg-white p-8 text-sm text-slate-500">
-                                                Aucune demande de retour en attente.
-                                            </section>
+                                            <EmptyState message="Aucune demande de retour en attente." />
                                         )}
 
                                         {returnRequests.length > 0 && returnRequests.map((loan) => (
@@ -621,9 +881,7 @@ export default function DashboardPage() {
                                         </div>
 
                                         {activeLoans.length === 0 && (
-                                            <section className="rounded-xl border border-slate-200 bg-white p-8 text-sm text-slate-500">
-                                                Aucun emprunt actif a afficher.
-                                            </section>
+                                            <EmptyState message="Aucun emprunt actif a afficher." />
                                         )}
 
                                         {activeLoans.length > 0 && activeLoans.map((loan) => (
@@ -645,7 +903,7 @@ export default function DashboardPage() {
                             <section className="grid gap-4 md:grid-cols-3">
                                 <StatCard label="Reservations listees" value={reservations.length} />
                                 <StatCard label="En attente" value={pendingReservations.length} tone="warning" />
-                                <StatCard label="Pret à recuperer" value={readyReservations.length} tone="success" />
+                                <StatCard label="Pret a recuperer" value={readyReservations.length} tone="success" />
                             </section>
 
                             <form
@@ -726,22 +984,10 @@ export default function DashboardPage() {
                                 </div>
                             </form>
 
-                            {reservationsLoading && (
-                                <section className="rounded-xl border border-slate-200 bg-white p-8 text-sm text-slate-500">
-                                    Chargement des reservations...
-                                </section>
-                            )}
-
-                            {!reservationsLoading && reservationsError && (
-                                <section className="rounded-xl border border-red-200 bg-red-50 p-8 text-sm text-red-700">
-                                    {reservationsError}
-                                </section>
-                            )}
-
+                            {reservationsLoading && <EmptyState message="Chargement des reservations..." />}
+                            {!reservationsLoading && reservationsError && <ErrorState message={reservationsError} />}
                             {!reservationsLoading && !reservationsError && reservations.length === 0 && (
-                                <section className="rounded-xl border border-slate-200 bg-white p-8 text-sm text-slate-500">
-                                    Aucune reservation ne correspond a ces filtres.
-                                </section>
+                                <EmptyState message="Aucune reservation ne correspond a ces filtres." />
                             )}
 
                             {!reservationsLoading && !reservationsError && reservations.length > 0 && (
@@ -849,6 +1095,79 @@ export default function DashboardPage() {
                                             </article>
                                         );
                                     })}
+                                </section>
+                            )}
+                        </>
+                    )}
+
+                    {activeTab === "reviews" && (
+                        <>
+                            <section className="grid gap-4 md:grid-cols-3">
+                                <StatCard label="Total avis" value={reviews.length} />
+                                <StatCard label="En attente de verification" value={pendingCount} tone="warning" />
+                                <StatCard label="Avis confirmes" value={confirmedCount} tone="success" />
+                            </section>
+
+                            <section className="flex flex-wrap gap-3">
+                                {[
+                                    { id: "all", label: "Toutes" },
+                                    { id: "pending", label: "En attente" },
+                                    { id: "confirmed", label: "Confirmees" },
+                                ].map((filterOption) => (
+                                    <button
+                                        key={filterOption.id}
+                                        type="button"
+                                        onClick={() => setActiveFilter(filterOption.id)}
+                                        className={`rounded-xl border px-4 py-2 text-sm font-medium ${
+                                            activeFilter === filterOption.id
+                                                ? "border-slate-900 bg-slate-900 text-white"
+                                                : "border-slate-300 bg-white text-slate-700"
+                                        }`}
+                                    >
+                                        {filterOption.label}
+                                    </button>
+                                ))}
+                            </section>
+
+                            {reviewsLoading && <EmptyState message="Chargement des avis..." />}
+                            {!reviewsLoading && reviewsError && <ErrorState message={reviewsError} />}
+                            {!reviewsLoading && !reviewsError && filteredReviews.length === 0 && (
+                                <EmptyState message="Aucun avis a afficher pour ce filtre." />
+                            )}
+
+                            {!reviewsLoading && !reviewsError && filteredReviews.length > 0 && (
+                                <section className="space-y-4">
+                                    {filteredReviews.map((review) => (
+                                        <ReviewCard
+                                            key={review.id}
+                                            review={review}
+                                            currentUserId={user?.id}
+                                            showBookTitle
+                                            showReviewerName
+                                            actions={
+                                                <>
+                                                    {!review?.isModerated && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleModerate(review.id)}
+                                                            disabled={processingId === review.id}
+                                                            className="rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+                                                        >
+                                                            Confirmer
+                                                        </button>
+                                                    )}
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleDelete(review.id)}
+                                                        disabled={processingId === review.id}
+                                                        className="rounded-xl border border-red-300 bg-red-50 px-4 py-2 text-sm font-medium text-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+                                                    >
+                                                        Supprimer
+                                                    </button>
+                                                </>
+                                            }
+                                        />
+                                    ))}
                                 </section>
                             )}
                         </>
