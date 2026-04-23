@@ -21,7 +21,7 @@ export default function ProfilePage() {
     const [loadingProfile, setLoadingProfile] = useState(true)
     const [loansCount, setLoansCount] = useState(0)
 
-    const [profileForm, setProfileForm] = useState({ prenom: '', nom: '', email: '' })
+    const [profileForm, setProfileForm] = useState({ prenom: '', nom: '', email: '', phone: '' })
     const [profileError, setProfileError] = useState(null)
     const [profileSuccess, setProfileSuccess] = useState(false)
     const [savingProfile, setSavingProfile] = useState(false)
@@ -37,7 +37,7 @@ export default function ProfilePage() {
         getMyProfile()
             .then(data => {
                 setProfile(data)
-                setProfileForm({ prenom: data.prenom ?? '', nom: data.nom ?? '', email: data.email ?? '' })
+                setProfileForm({ prenom: data.prenom ?? '', nom: data.nom ?? '', email: data.email ?? '', phone: data.phone ?? '' })
             })
             .catch(e => setProfileError(e.message))
             .finally(() => setLoadingProfile(false))
@@ -185,7 +185,7 @@ export default function ProfilePage() {
                             )}
 
                             <form onSubmit={handleProfileSubmit} className="space-y-4">
-                                <div className="grid md:grid-cols-3 gap-4">
+                                <div className="grid grid-cols-2 gap-4">
                                     <div>
                                         <label className="block text-sm font-medium text-slate-700 mb-1">Prénom</label>
                                         <input
@@ -214,6 +214,16 @@ export default function ProfilePage() {
                                             onChange={e => setProfileForm({ ...profileForm, email: e.target.value })}
                                             className="w-full h-11 rounded-xl border border-slate-300 px-3 text-sm text-slate-900 outline-none focus:border-blue-400"
                                             required
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">Téléphone</label>
+                                        <input
+                                            type="tel"
+                                            value={profileForm.phone}
+                                            onChange={e => setProfileForm({ ...profileForm, phone: e.target.value })}
+                                            className="w-full h-11 rounded-xl border border-slate-300 px-3 text-sm text-slate-900 outline-none focus:border-blue-400"
+                                            placeholder="Optionnel"
                                         />
                                     </div>
                                 </div>
