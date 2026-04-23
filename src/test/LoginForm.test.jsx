@@ -93,8 +93,8 @@ describe('LoginForm', () => {
         // Vérif que login() du contexte a bien été appelé avec la réponse API
         expect(mockLogin).toHaveBeenCalledWith({ token: 'fake-token', user: { id: 1, nom: 'Dupont' } })
 
-        // Vérif que la navigation vers /books est déclenchée avec le toast en state
-        expect(mockNavigate).toHaveBeenCalledWith('/books', {
+        // Vérif que la navigation vers /my-dashboard est déclenchée avec le toast en state
+        expect(mockNavigate).toHaveBeenCalledWith('/my-dashboard', {
             state: { toast: { message: 'Connecté avec succès !', type: 'success' } }
         })
     })
