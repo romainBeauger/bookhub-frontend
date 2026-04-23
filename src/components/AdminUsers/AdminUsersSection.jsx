@@ -4,6 +4,7 @@ import {
     deleteAdminUser,
     getAdminUsers,
     suspendAdminUser,
+    unsuspendAdminUser,
     updateAdminUser,
 } from "../../services/adminUserService.js";
 import { getUserRoles, hasRole } from "../../utils/auth.js";
@@ -566,6 +567,30 @@ export default function AdminUsersSection({ currentUser }) {
         }
     }
 
+    async function handleUnsuspend(managedUser) {
+        if (!managedUser?.id || managedUser?.id === currentUser?.id) {
+            return;
+        }
+
+        const confirmed = window.confirm(`Retirer la suspension de ${getUserDisplayName(managedUser)} ?`);
+
+        if (!confirmed) {
+            return;
+        }
+
+        setProcessingId(`unsuspend-${managedUser.id}`);
+        setError("");
+
+        try {
+            await unsuspendAdminUser(managedUser.id);
+            await loadUsers();
+        } catch (err) {
+            setError(err.message || "Impossible de retirer la suspension de cet utilisateur.");
+        } finally {
+            setProcessingId(null);
+        }
+    }
+
     async function handleDelete(managedUser) {
         if (!managedUser?.id || managedUser?.id === currentUser?.id) {
             return;
@@ -642,6 +667,7 @@ export default function AdminUsersSection({ currentUser }) {
                         const isSelf = managedUser?.id === currentUser?.id;
                         const isSuspended = isUserSuspended(managedUser);
                         const suspendBusy = processingId === `suspend-${managedUser.id}`;
+                        const unsuspendBusy = processingId === `unsuspend-${managedUser.id}`;
                         const deleteBusy = processingId === `delete-${managedUser.id}`;
 
                         return (
@@ -718,11 +744,19 @@ export default function AdminUsersSection({ currentUser }) {
                                         </button>
                                         <button
                                             type="button"
-                                            onClick={() => openSuspendModal(managedUser)}
-                                            disabled={isSelf || isSuspended || suspendBusy}
-                                            className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-2 text-sm font-medium text-amber-700 disabled:cursor-not-allowed disabled:opacity-60"
+                                            onClick={() => (isSuspended ? handleUnsuspend(managedUser) : openSuspendModal(managedUser))}
+                                            disabled={isSelf || suspendBusy || unsuspendBusy}
+                                            className={`rounded-xl px-4 py-2 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-60 ${
+                                                isSuspended
+                                                    ? "border border-emerald-300 bg-emerald-50 text-emerald-700"
+                                                    : "border border-amber-300 bg-amber-50 text-amber-700"
+                                            }`}
                                         >
-                                            {suspendBusy ? "Traitement..." : "Suspendre"}
+                                            {suspendBusy || unsuspendBusy
+                                                ? "Traitement..."
+                                                : isSuspended
+                                                    ? "Reactiver"
+                                                    : "Suspendre"}
                                         </button>
                                         <button
                                             type="button"
