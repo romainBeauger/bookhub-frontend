@@ -102,6 +102,7 @@ export async function suspendAdminUser(userId, duration) {
             method: "PATCH",
             headers: getAuthHeaders(),
             body: JSON.stringify({
+                duree_jours: duration,
                 duration,
                 durationDays: duration,
             }),
@@ -112,6 +113,23 @@ export async function suspendAdminUser(userId, duration) {
             403: "Vous n'avez pas les droits pour suspendre cet utilisateur.",
             404: "Utilisateur introuvable.",
             409: "Cette suspension est impossible dans l'etat actuel.",
+        }
+    );
+}
+
+export async function unsuspendAdminUser(userId) {
+    return request(
+        `/api/admin/users/${userId}/unsuspend`,
+        {
+            method: "PATCH",
+            headers: getAuthHeaders(),
+        },
+        "Impossible de retirer la suspension de cet utilisateur.",
+        {
+            401: "Session expiree ou acces non autorise.",
+            403: "Vous n'avez pas les droits pour modifier cet utilisateur.",
+            404: "Utilisateur introuvable.",
+            409: "Cette operation est impossible dans l'etat actuel.",
         }
     );
 }

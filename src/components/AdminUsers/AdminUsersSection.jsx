@@ -4,6 +4,7 @@ import {
     deleteAdminUser,
     getAdminUsers,
     suspendAdminUser,
+    unsuspendAdminUser,
     updateAdminUser,
 } from "../../services/adminUserService.js";
 import { getUserRoles, hasRole } from "../../utils/auth.js";
@@ -88,7 +89,8 @@ function formatDate(value) {
         return "-";
     }
 
-    const date = new Date(value);
+    const normalizedValue = typeof value === "string" ? value.replace(" ", "T") : value;
+    const date = new Date(normalizedValue);
 
     if (Number.isNaN(date.getTime())) {
         return "-";
@@ -98,11 +100,42 @@ function formatDate(value) {
 }
 
 function getSuspendedUntil(managedUser) {
-    return managedUser?.suspendedUntil
-        || managedUser?.suspensionEndAt
-        || managedUser?.suspensionEndsAt
-        || managedUser?.suspendedUntilAt
-        || null;
+    if (!managedUser || typeof managedUser !== "object") {
+        return undefined;
+    }
+
+    const suspensionKeys = [
+        "suspendedUntil",
+        "suspensionUntil",
+        "suspensionEndAt",
+        "suspensionEndsAt",
+        "suspendedUntilAt",
+        "suspended_until",
+        "suspension_until",
+        "suspension_end_at",
+        "suspension_ends_at",
+    ];
+
+    for (const key of suspensionKeys) {
+        if (Object.prototype.hasOwnProperty.call(managedUser, key)) {
+            return managedUser[key];
+        }
+    }
+
+    return undefined;
+}
+
+function getSuspensionEndDate(duration) {
+    const normalizedDuration = Number(duration);
+
+    if (!Number.isInteger(normalizedDuration) || normalizedDuration <= 0) {
+        return null;
+    }
+
+    const nextDate = new Date();
+    nextDate.setDate(nextDate.getDate() + normalizedDuration);
+
+    return nextDate;
 }
 
 function buildUserFormState(managedUser = null) {
@@ -349,17 +382,25 @@ function SuspendUserModal({
         return null;
     }
 
+    const presetDurations = ["1", "3", "7", "30"];
+    const isCustomDuration = !presetDurations.includes(duration);
+    const suspensionEndDate = getSuspensionEndDate(duration);
+    const currentSuspendedUntil = getSuspendedUntil(managedUser);
+
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4">
             <div className="w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl">
                 <div className="flex items-start justify-between gap-4">
                     <div>
-                        <p className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-500">
+                        <p className="text-sm font-semibold uppercase tracking-[0.16em] text-amber-600">
                             Suspension utilisateur
                         </p>
                         <h2 className="mt-2 text-2xl font-bold text-slate-900">
                             Suspendre {getUserDisplayName(managedUser)}
                         </h2>
+                        <p className="mt-2 text-sm text-slate-500">
+                            Choisissez une duree de suspension pour ce compte.
+                        </p>
                     </div>
                     <button
                         type="button"
@@ -371,9 +412,64 @@ function SuspendUserModal({
                 </div>
 
                 <form onSubmit={onSubmit} className="mt-6 space-y-5">
+                    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                        <p className="text-sm font-semibold text-slate-900">{getUserDisplayName(managedUser)}</p>
+                        <p className="mt-1 text-sm text-slate-500">{managedUser?.email || "Email non renseigne"}</p>
+                        <div className="mt-3 flex flex-wrap gap-2 text-xs font-medium">
+                            <span className="rounded-full bg-white px-3 py-1 text-slate-700">
+                                Role: {getRoleLabel(managedUser)}
+                            </span>
+                            <span className={`rounded-full px-3 py-1 ${getUserStatusClass(managedUser)}`}>
+                                {getUserStatusLabel(managedUser)}
+                            </span>
+                            {currentSuspendedUntil && (
+                                <span className="rounded-full bg-white px-3 py-1 text-slate-700">
+                                    Suspendu jusqu'au {formatDate(currentSuspendedUntil)}
+                                </span>
+                            )}
+                        </div>
+                    </div>
+
+                    <div>
+                        <p className="mb-2 block text-sm font-semibold text-slate-900">
+                            Duree de suspension
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                            {presetDurations.map((presetDuration) => {
+                                const isActive = duration === presetDuration;
+
+                                return (
+                                    <button
+                                        key={presetDuration}
+                                        type="button"
+                                        onClick={() => onChange(presetDuration)}
+                                        className={`rounded-full border px-4 py-2 text-sm font-medium transition-colors ${
+                                            isActive
+                                                ? "border-amber-500 bg-amber-100 text-amber-800"
+                                                : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                                        }`}
+                                    >
+                                        {presetDuration} jour{presetDuration === "1" ? "" : "s"}
+                                    </button>
+                                );
+                            })}
+                            <button
+                                type="button"
+                                onClick={() => onChange(isCustomDuration ? duration : "")}
+                                className={`rounded-full border px-4 py-2 text-sm font-medium transition-colors ${
+                                    isCustomDuration
+                                        ? "border-amber-500 bg-amber-100 text-amber-800"
+                                        : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                                }`}
+                            >
+                                Personnalisee
+                            </button>
+                        </div>
+                    </div>
+
                     <div>
                         <label htmlFor="managed-user-suspend-duration" className="mb-2 block text-sm font-semibold text-slate-900">
-                            Duree de suspension (en jours)
+                            Nombre de jours
                         </label>
                         <input
                             id="managed-user-suspend-duration"
@@ -382,9 +478,19 @@ function SuspendUserModal({
                             value={duration}
                             onChange={(event) => onChange(event.target.value)}
                             className="h-11 w-full rounded-xl border border-slate-300 px-3 text-sm text-slate-900 outline-none"
+                            placeholder="Entrez un nombre de jours"
                             required
                         />
+                        <p className="mt-2 text-xs text-slate-500">
+                            Selectionnez une duree rapide ou saisissez une valeur personnalisee.
+                        </p>
                     </div>
+
+                    {suspensionEndDate && (
+                        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                            Fin estimee de suspension: {formatDate(suspensionEndDate)}
+                        </div>
+                    )}
 
                     {error && (
                         <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -405,7 +511,7 @@ function SuspendUserModal({
                             disabled={saving}
                             className="rounded-xl border border-amber-300 bg-amber-50 px-5 py-3 text-sm font-medium text-amber-700 disabled:cursor-not-allowed disabled:opacity-60"
                         >
-                            {saving ? "Suspension..." : "Confirmer la suspension"}
+                            {saving ? "Suspension..." : `Suspendre ${duration || "..."} jour${duration === "1" ? "" : "s"}`}
                         </button>
                     </div>
                 </form>
@@ -566,6 +672,30 @@ export default function AdminUsersSection({ currentUser }) {
         }
     }
 
+    async function handleUnsuspend(managedUser) {
+        if (!managedUser?.id || managedUser?.id === currentUser?.id) {
+            return;
+        }
+
+        const confirmed = window.confirm(`Retirer la suspension de ${getUserDisplayName(managedUser)} ?`);
+
+        if (!confirmed) {
+            return;
+        }
+
+        setProcessingId(`unsuspend-${managedUser.id}`);
+        setError("");
+
+        try {
+            await unsuspendAdminUser(managedUser.id);
+            await loadUsers();
+        } catch (err) {
+            setError(err.message || "Impossible de retirer la suspension de cet utilisateur.");
+        } finally {
+            setProcessingId(null);
+        }
+    }
+
     async function handleDelete(managedUser) {
         if (!managedUser?.id || managedUser?.id === currentUser?.id) {
             return;
@@ -641,7 +771,9 @@ export default function AdminUsersSection({ currentUser }) {
                     {users.map((managedUser) => {
                         const isSelf = managedUser?.id === currentUser?.id;
                         const isSuspended = isUserSuspended(managedUser);
+                        const suspendedUntil = getSuspendedUntil(managedUser);
                         const suspendBusy = processingId === `suspend-${managedUser.id}`;
+                        const unsuspendBusy = processingId === `unsuspend-${managedUser.id}`;
                         const deleteBusy = processingId === `delete-${managedUser.id}`;
 
                         return (
@@ -697,14 +829,18 @@ export default function AdminUsersSection({ currentUser }) {
                                                     {managedUser?.id ?? "-"}
                                                 </p>
                                             </div>
-                                            <div>
-                                                <p className="text-xs uppercase tracking-[0.14em] text-slate-500">
-                                                    Suspension jusqu'au
-                                                </p>
-                                                <p className="mt-1 text-sm font-medium text-slate-800">
-                                                    {formatDate(getSuspendedUntil(managedUser))}
-                                                </p>
-                                            </div>
+                                            {isSuspended && (
+                                                <div>
+                                                    <p className="text-xs uppercase tracking-[0.14em] text-slate-500">
+                                                        Suspension jusqu'au
+                                                    </p>
+                                                    <p className="mt-1 text-sm font-medium text-slate-800">
+                                                        {typeof suspendedUntil === "string" && suspendedUntil.trim()
+                                                            ? formatDate(suspendedUntil)
+                                                            : "Date de fin non renseignee"}
+                                                    </p>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
 
@@ -718,11 +854,19 @@ export default function AdminUsersSection({ currentUser }) {
                                         </button>
                                         <button
                                             type="button"
-                                            onClick={() => openSuspendModal(managedUser)}
-                                            disabled={isSelf || isSuspended || suspendBusy}
-                                            className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-2 text-sm font-medium text-amber-700 disabled:cursor-not-allowed disabled:opacity-60"
+                                            onClick={() => (isSuspended ? handleUnsuspend(managedUser) : openSuspendModal(managedUser))}
+                                            disabled={isSelf || suspendBusy || unsuspendBusy}
+                                            className={`rounded-xl px-4 py-2 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-60 ${
+                                                isSuspended
+                                                    ? "border border-emerald-300 bg-emerald-50 text-emerald-700"
+                                                    : "border border-amber-300 bg-amber-50 text-amber-700"
+                                            }`}
                                         >
-                                            {suspendBusy ? "Traitement..." : "Suspendre"}
+                                            {suspendBusy || unsuspendBusy
+                                                ? "Traitement..."
+                                                : isSuspended
+                                                    ? "Reactiver"
+                                                    : "Suspendre"}
                                         </button>
                                         <button
                                             type="button"
