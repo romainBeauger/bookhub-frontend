@@ -33,7 +33,7 @@ function getLoanPresentation(loan) {
     };
 }
 
-export default function LoanCard({ loan, onReturn, onValidateReturn, loading = false }) {
+export default function LoanCard({ loan, onReturn, onValidateReturn, loading = false, showActions = true }) {
     const percent = getProgressPercent(loan.dueDate);
     const isLate = loan.isLate || loan.status === "OVERDUE";
     const dueFormatted = new Date(loan.dueDate).toLocaleDateString("fr-FR");
@@ -66,7 +66,7 @@ export default function LoanCard({ loan, onReturn, onValidateReturn, loading = f
                 />
             </div>
 
-            {(canRequestReturn || canValidateReturn) && (
+            {showActions && (canRequestReturn || canValidateReturn) && (
                 <div className="mt-3 flex justify-end">
                     <button
                         type="button"
