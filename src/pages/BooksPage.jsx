@@ -5,8 +5,14 @@ import BooksSidebar from "../components/BooksPage/BooksSidebar.jsx";
 import HeaderComponent from "../components/Header/HeaderComponent.jsx";
 import { getBooks, getCategories } from "../services/bookService.js";
 import { borrowBook } from "../services/loanService.js";
-import { createReservation } from "../services/reservationService.js";
+import { createReservation, getMyReservations } from "../services/reservationService.js";
 import { useAuth } from "../context/AuthContext.jsx";
+import {
+    countActiveReservations,
+    extractReservations,
+    getReservationLimitMessage,
+    RESERVATION_LIMIT,
+} from "../utils/reservations.js";
 
 const DEFAULT_LIMIT = 12;
 const SEARCH_DEBOUNCE_MS = 350;
@@ -130,6 +136,7 @@ export default function BooksPage() {
     const [error, setError] = useState("");
     const [borrowingId, setBorrowingId] = useState(null);
     const [reservingId, setReservingId] = useState(null);
+    const [reservationCount, setReservationCount] = useState(0);
     const [searchInput, setSearchInput] = useState(initialState.q);
     const [debouncedSearch, setDebouncedSearch] = useState(initialState.q);
     const [filters, setFilters] = useState({
@@ -219,6 +226,37 @@ export default function BooksPage() {
             ignore = true;
         };
     }, []);
+
+    useEffect(() => {
+        let ignore = false;
+
+        async function loadMyReservations() {
+            if (!user) {
+                if (!ignore) {
+                    setReservationCount(0);
+                }
+                return;
+            }
+
+            try {
+                const response = await getMyReservations();
+
+                if (!ignore) {
+                    setReservationCount(countActiveReservations(extractReservations(response)));
+                }
+            } catch {
+                if (!ignore) {
+                    setReservationCount(0);
+                }
+            }
+        }
+
+        loadMyReservations();
+
+        return () => {
+            ignore = true;
+        };
+    }, [user]);
 
     useEffect(() => {
         let ignore = false;
@@ -342,9 +380,18 @@ export default function BooksPage() {
             return;
         }
 
+        if (reservationCount >= RESERVATION_LIMIT) {
+            setToast({
+                type: "error",
+                message: getReservationLimitMessage(),
+            });
+            return;
+        }
+
         try {
             setReservingId(bookId);
             await createReservation(bookId);
+            setReservationCount((currentValue) => currentValue + 1);
             setToast({
                 type: "success",
                 message: "Reservation creee avec succes.",
@@ -377,6 +424,7 @@ export default function BooksPage() {
         q: searchInput,
         ...filters,
     });
+    const reservationLimitReached = reservationCount >= RESERVATION_LIMIT;
 
     return (
         <main className="min-h-screen bg-[#f2f2f2]">
@@ -468,6 +516,11 @@ export default function BooksPage() {
                                     ? `${pagination.total} livres trouves avec les filtres`
                                     : `${pagination.total} livres trouves`}
                             </p>
+                            {reservationLimitReached && (
+                                <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-700">
+                                    {getReservationLimitMessage()}
+                                </p>
+                            )}
                         </div>
 
                         <div className="px-6 py-6 md:px-8">
@@ -520,6 +573,8 @@ export default function BooksPage() {
                                                     borrowing={borrowingId === (book?.id || book?._id)}
                                                     onReserve={handleReserve}
                                                     reserving={reservingId === (book?.id || book?._id)}
+                                                    reserveDisabled={reservationLimitReached}
+                                                    reserveLabelOverride={reservationLimitReached ? "Limite atteinte" : ""}
                                                     view={filters.view}
                                                 />
                                             );

@@ -5,6 +5,8 @@ export const RESERVATION_STATUS_LABELS = {
     CANCELLED: "Annulee",
 };
 
+export const RESERVATION_LIMIT = 5;
+
 export function extractReservations(payload) {
     if (Array.isArray(payload)) {
         return payload;
@@ -72,4 +74,20 @@ export function getReservationStatusClass(status) {
 
 export function canCancelReservation(status) {
     return status === "PENDING" || status === "READY";
+}
+
+export function isActiveReservationStatus(status) {
+    return status === "PENDING" || status === "READY";
+}
+
+export function countActiveReservations(reservations = []) {
+    return reservations.filter((reservation) => isActiveReservationStatus(reservation?.status)).length;
+}
+
+export function hasReachedReservationLimit(reservations = []) {
+    return countActiveReservations(reservations) >= RESERVATION_LIMIT;
+}
+
+export function getReservationLimitMessage() {
+    return `Vous avez atteint la limite de ${RESERVATION_LIMIT} reservations actives.`;
 }

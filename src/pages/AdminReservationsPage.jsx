@@ -50,6 +50,7 @@ export default function AdminReservationsPage() {
     const [filters, setFilters] = useState({
         status: "",
         bookId: "",
+        userName: "",
     });
 
     useEffect(() => {
@@ -88,6 +89,7 @@ export default function AdminReservationsPage() {
             const response = await getAllReservations({
                 status: nextFilters.status || undefined,
                 bookId: nextFilters.bookId ? Number(nextFilters.bookId) : undefined,
+                userName: nextFilters.userName?.trim() || undefined,
             });
             setReservations(sortReservationsByNewest(extractReservations(response)));
         } catch (err) {
@@ -172,7 +174,7 @@ export default function AdminReservationsPage() {
 
                     <form
                         onSubmit={handleFilterSubmit}
-                        className="grid gap-4 rounded-2xl border border-slate-200 bg-white p-5 md:grid-cols-[1fr_1fr_auto]"
+                        className="grid gap-4 rounded-2xl border border-slate-200 bg-white p-5 md:grid-cols-[1fr_1fr_1fr_auto]"
                     >
                         <div>
                             <label htmlFor="reservation-status" className="mb-2 block text-sm font-semibold text-slate-900">
@@ -190,6 +192,20 @@ export default function AdminReservationsPage() {
                                     </option>
                                 ))}
                             </select>
+                        </div>
+
+                        <div>
+                            <label htmlFor="reservation-user-name" className="mb-2 block text-sm font-semibold text-slate-900">
+                                Utilisateur
+                            </label>
+                            <input
+                                id="reservation-user-name"
+                                type="text"
+                                value={filters.userName}
+                                onChange={(event) => setFilters((current) => ({ ...current, userName: event.target.value }))}
+                                placeholder="Prenom ou nom"
+                                className="h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none"
+                            />
                         </div>
 
                         <div>
@@ -217,7 +233,7 @@ export default function AdminReservationsPage() {
                             <button
                                 type="button"
                                 onClick={async () => {
-                                    const resetFilters = { status: "", bookId: "" };
+                                    const resetFilters = { status: "", bookId: "", userName: "" };
                                     setFilters(resetFilters);
                                     await loadReservations(resetFilters);
                                 }}

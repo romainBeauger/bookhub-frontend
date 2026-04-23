@@ -8,7 +8,13 @@ import ReviewCard from "../components/Reviews/ReviewCard.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import { createBookReview, getBookById, getBookReviews } from "../services/bookService.js";
 import { borrowBook } from "../services/loanService.js";
-import { createReservation } from "../services/reservationService.js";
+import { createReservation, getMyReservations } from "../services/reservationService.js";
+import {
+    countActiveReservations,
+    extractReservations,
+    getReservationLimitMessage,
+    RESERVATION_LIMIT,
+} from "../utils/reservations.js";
 
 function getCategoryName(book) {
     if (typeof book?.category === "string") {
@@ -92,6 +98,7 @@ export default function BookDetailsPage() {
     const [reviewSubmitting, setReviewSubmitting] = useState(false);
     const [borrowSubmitting, setBorrowSubmitting] = useState(false);
     const [reserveSubmitting, setReserveSubmitting] = useState(false);
+    const [reservationCount, setReservationCount] = useState(0);
     const [toast, setToast] = useState(null);
 
     useEffect(() => {
@@ -124,6 +131,37 @@ export default function BookDetailsPage() {
             ignore = true;
         };
     }, [id]);
+
+    useEffect(() => {
+        let ignore = false;
+
+        async function loadMyReservations() {
+            if (!user) {
+                if (!ignore) {
+                    setReservationCount(0);
+                }
+                return;
+            }
+
+            try {
+                const response = await getMyReservations();
+
+                if (!ignore) {
+                    setReservationCount(countActiveReservations(extractReservations(response)));
+                }
+            } catch {
+                if (!ignore) {
+                    setReservationCount(0);
+                }
+            }
+        }
+
+        loadMyReservations();
+
+        return () => {
+            ignore = true;
+        };
+    }, [user]);
 
     useEffect(() => {
         let ignore = false;
@@ -251,10 +289,16 @@ export default function BookDetailsPage() {
             return;
         }
 
+        if (reservationCount >= RESERVATION_LIMIT) {
+            setToast({ type: "error", message: getReservationLimitMessage() });
+            return;
+        }
+
         setReserveSubmitting(true);
 
         try {
             await createReservation(book.id);
+            setReservationCount((currentValue) => currentValue + 1);
             setToast({ type: "success", message: "Reservation creee avec succes." });
         } catch (err) {
             setToast({ type: "error", message: err.message || "Impossible de creer la reservation." });
@@ -262,6 +306,8 @@ export default function BookDetailsPage() {
             setReserveSubmitting(false);
         }
     }
+
+    const reservationLimitReached = reservationCount >= RESERVATION_LIMIT;
 
     return (
         <main className="min-h-screen bg-[#f2f2f2]">
@@ -469,13 +515,18 @@ export default function BookDetailsPage() {
                                             <button
                                                 type="button"
                                                 onClick={handleReserve}
-                                                disabled={reserveSubmitting}
+                                                disabled={reserveSubmitting || reservationLimitReached}
                                                 className="rounded-xl border border-amber-400 bg-white px-5 py-2 text-sm font-medium text-amber-700 disabled:cursor-not-allowed disabled:border-slate-300 disabled:text-slate-400"
                                             >
-                                                {reserveSubmitting ? "Reservation..." : "Reserver"}
+                                                {reserveSubmitting ? "Reservation..." : reservationLimitReached ? "Limite atteinte" : "Reserver"}
                                             </button>
                                         </div>
                                     </div>
+                                    {reservationLimitReached && (
+                                        <p className="text-sm font-medium text-amber-700">
+                                            {getReservationLimitMessage()}
+                                        </p>
+                                    )}
 
                                     {reviewFormOpen && (
                                         <section className="rounded-2xl border border-slate-200 bg-slate-50 p-5">

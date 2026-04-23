@@ -88,6 +88,10 @@ export async function getAllReservations(params = {}) {
         searchParams.set("bookId", String(params.bookId));
     }
 
+    if (params.userName) {
+        searchParams.set("userName", params.userName);
+    }
+
     const queryString = searchParams.toString();
     const url = queryString ? `/api/reservations?${queryString}` : "/api/reservations";
 

@@ -256,6 +256,7 @@ export default function DashboardPage() {
     const [reservationFilters, setReservationFilters] = useState({
         status: "",
         bookId: "",
+        userName: "",
     });
 
     async function loadReviews() {
@@ -294,6 +295,7 @@ export default function DashboardPage() {
             const response = await getAllReservations({
                 status: nextFilters.status || undefined,
                 bookId: nextFilters.bookId ? Number(nextFilters.bookId) : undefined,
+                userName: nextFilters.userName?.trim() || undefined,
             });
             setReservations(sortReservationsByNewest(extractReservations(response)));
         } catch (err) {
@@ -648,7 +650,7 @@ export default function DashboardPage() {
 
                             <form
                                 onSubmit={handleReservationFilterSubmit}
-                                className="grid gap-4 rounded-2xl border border-slate-200 bg-white p-5 md:grid-cols-[1fr_1fr_auto]"
+                                className="grid gap-4 rounded-2xl border border-slate-200 bg-white p-5 md:grid-cols-[1fr_1fr_1fr_auto]"
                             >
                                 <div>
                                     <label htmlFor="reservation-status" className="mb-2 block text-sm font-semibold text-slate-900">
@@ -668,6 +670,22 @@ export default function DashboardPage() {
                                             </option>
                                         ))}
                                     </select>
+                                </div>
+
+                                <div>
+                                    <label htmlFor="reservation-user-name" className="mb-2 block text-sm font-semibold text-slate-900">
+                                        Utilisateur
+                                    </label>
+                                    <input
+                                        id="reservation-user-name"
+                                        type="text"
+                                        value={reservationFilters.userName}
+                                        onChange={(event) =>
+                                            setReservationFilters((current) => ({ ...current, userName: event.target.value }))
+                                        }
+                                        placeholder="Prenom ou nom"
+                                        className="h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none"
+                                    />
                                 </div>
 
                                 <div>
@@ -697,7 +715,7 @@ export default function DashboardPage() {
                                     <button
                                         type="button"
                                         onClick={async () => {
-                                            const resetFilters = { status: "", bookId: "" };
+                                            const resetFilters = { status: "", bookId: "", userName: "" };
                                             setReservationFilters(resetFilters);
                                             await loadReservations(resetFilters);
                                         }}
