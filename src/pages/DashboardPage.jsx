@@ -4,7 +4,16 @@ import BooksSidebar from "../components/BooksPage/BooksSidebar.jsx";
 import HeaderComponent from "../components/Header/HeaderComponent.jsx";
 import ReviewCard from "../components/Reviews/ReviewCard.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
-import { deleteReview, getAllReviews, moderateReview } from "../services/bookService.js";
+import {
+    createBook,
+    deleteBook,
+    deleteReview,
+    getAllReviews,
+    getBooks,
+    getCategories,
+    moderateReview,
+    updateBook,
+} from "../services/bookService.js";
 import { getAllLoans, validateReturn } from "../services/loanService.js";
 import {
     cancelReservation,
@@ -352,6 +361,237 @@ function ErrorState({ message }) {
     );
 }
 
+function extractBooks(payload) {
+    if (Array.isArray(payload)) {
+        return payload;
+    }
+
+    if (Array.isArray(payload?.books)) {
+        return payload.books;
+    }
+
+    if (Array.isArray(payload?.data)) {
+        return payload.data;
+    }
+
+    return [];
+}
+
+function extractCategories(payload) {
+    if (Array.isArray(payload)) {
+        return payload;
+    }
+
+    if (Array.isArray(payload?.categories)) {
+        return payload.categories;
+    }
+
+    if (Array.isArray(payload?.data)) {
+        return payload.data;
+    }
+
+    return [];
+}
+
+function buildBookFormState(book = null) {
+    return {
+        title: book?.title || "",
+        author: book?.author || "",
+        description: book?.description || "",
+        isbn: book?.isbn || "",
+        publishedAt: book?.publishedAt || "",
+        totalCopies: String(book?.totalCopies ?? 1),
+        availableCopies: String(book?.availableCopies ?? 1),
+        image: book?.image || "",
+        categoryId: String(book?.category?.id ?? book?.categoryId ?? ""),
+    };
+}
+
+function BookManagementModal({
+    open,
+    mode,
+    form,
+    categories,
+    error,
+    saving,
+    onChange,
+    onClose,
+    onSubmit,
+}) {
+    if (!open) {
+        return null;
+    }
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4">
+            <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-3xl bg-white p-6 shadow-2xl">
+                <div className="flex items-start justify-between gap-4">
+                    <div>
+                        <p className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-500">
+                            Gestion livres
+                        </p>
+                        <h2 className="mt-2 text-2xl font-bold text-slate-900">
+                            {mode === "create" ? "Ajouter un livre" : "Modifier un livre"}
+                        </h2>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="rounded-xl border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700"
+                    >
+                        Fermer
+                    </button>
+                </div>
+
+                <form onSubmit={onSubmit} className="mt-6 space-y-5">
+                    <div className="grid gap-4 md:grid-cols-2">
+                        <div>
+                            <label htmlFor="book-title" className="mb-2 block text-sm font-semibold text-slate-900">
+                                Titre
+                            </label>
+                            <input
+                                id="book-title"
+                                type="text"
+                                value={form.title}
+                                onChange={(event) => onChange("title", event.target.value)}
+                                className="h-11 w-full rounded-xl border border-slate-300 px-3 text-sm text-slate-900 outline-none"
+                                required
+                            />
+                        </div>
+                        <div>
+                            <label htmlFor="book-author" className="mb-2 block text-sm font-semibold text-slate-900">
+                                Auteur
+                            </label>
+                            <input
+                                id="book-author"
+                                type="text"
+                                value={form.author}
+                                onChange={(event) => onChange("author", event.target.value)}
+                                className="h-11 w-full rounded-xl border border-slate-300 px-3 text-sm text-slate-900 outline-none"
+                                required
+                            />
+                        </div>
+                        <div>
+                            <label htmlFor="book-isbn" className="mb-2 block text-sm font-semibold text-slate-900">
+                                ISBN
+                            </label>
+                            <input
+                                id="book-isbn"
+                                type="text"
+                                value={form.isbn}
+                                onChange={(event) => onChange("isbn", event.target.value)}
+                                className="h-11 w-full rounded-xl border border-slate-300 px-3 text-sm text-slate-900 outline-none"
+                            />
+                        </div>
+                        <div>
+                            <label htmlFor="book-published-at" className="mb-2 block text-sm font-semibold text-slate-900">
+                                Date de publication
+                            </label>
+                            <input
+                                id="book-published-at"
+                                type="text"
+                                value={form.publishedAt}
+                                onChange={(event) => onChange("publishedAt", event.target.value)}
+                                placeholder="YYYY-MM-DD"
+                                className="h-11 w-full rounded-xl border border-slate-300 px-3 text-sm text-slate-900 outline-none"
+                            />
+                        </div>
+                        <div>
+                            <label htmlFor="book-total-copies" className="mb-2 block text-sm font-semibold text-slate-900">
+                                Nombre total
+                            </label>
+                            <input
+                                id="book-total-copies"
+                                type="number"
+                                min="1"
+                                value={form.totalCopies}
+                                onChange={(event) => onChange("totalCopies", event.target.value)}
+                                className="h-11 w-full rounded-xl border border-slate-300 px-3 text-sm text-slate-900 outline-none"
+                                required
+                            />
+                        </div>
+                        <div>
+                            <label htmlFor="book-available-copies" className="mb-2 block text-sm font-semibold text-slate-900">
+                                Nombre disponible
+                            </label>
+                            <input
+                                id="book-available-copies"
+                                type="number"
+                                min="0"
+                                value={form.availableCopies}
+                                onChange={(event) => onChange("availableCopies", event.target.value)}
+                                className="h-11 w-full rounded-xl border border-slate-300 px-3 text-sm text-slate-900 outline-none"
+                                required
+                            />
+                        </div>
+                        <div className="md:col-span-2">
+                            <label htmlFor="book-image" className="mb-2 block text-sm font-semibold text-slate-900">
+                                Image
+                            </label>
+                            <input
+                                id="book-image"
+                                type="text"
+                                value={form.image}
+                                onChange={(event) => onChange("image", event.target.value)}
+                                className="h-11 w-full rounded-xl border border-slate-300 px-3 text-sm text-slate-900 outline-none"
+                            />
+                        </div>
+                        <div className="md:col-span-2">
+                            <label htmlFor="book-category" className="mb-2 block text-sm font-semibold text-slate-900">
+                                Categorie
+                            </label>
+                            <select
+                                id="book-category"
+                                value={form.categoryId}
+                                onChange={(event) => onChange("categoryId", event.target.value)}
+                                className="h-11 w-full rounded-xl border border-slate-300 px-3 text-sm text-slate-900 outline-none"
+                            >
+                                <option value="">Sans categorie</option>
+                                {categories.map((category) => (
+                                    <option key={String(category?.id ?? category?._id)} value={String(category?.id ?? category?._id)}>
+                                        {category?.name || category?.label || category?.title || "Categorie"}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                        <div className="md:col-span-2">
+                            <label htmlFor="book-description" className="mb-2 block text-sm font-semibold text-slate-900">
+                                Description
+                            </label>
+                            <textarea
+                                id="book-description"
+                                value={form.description}
+                                onChange={(event) => onChange("description", event.target.value)}
+                                rows="5"
+                                className="w-full rounded-xl border border-slate-300 px-3 py-3 text-sm text-slate-900 outline-none"
+                            />
+                        </div>
+                    </div>
+
+                    {error && <ErrorState message={error} />}
+
+                    <div className="flex flex-wrap gap-3">
+                        <button
+                            type="submit"
+                            disabled={saving}
+                            className="rounded-xl border border-slate-900 bg-slate-900 px-5 py-3 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                            {saving ? "Enregistrement..." : mode === "create" ? "Ajouter le livre" : "Enregistrer les modifications"}
+                        </button>
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-medium text-slate-700"
+                        >
+                            Annuler
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+}
+
 export default function DashboardPage() {
     const { user } = useAuth();
     const [navOpen, setNavOpen] = useState(false);
@@ -361,18 +601,28 @@ export default function DashboardPage() {
     const [reservations, setReservations] = useState([]);
     const [loanStats, setLoanStats] = useState(null);
     const [catalogueStats, setCatalogueStats] = useState(null);
+    const [managedBooks, setManagedBooks] = useState([]);
+    const [categories, setCategories] = useState([]);
     const [reviewsLoading, setReviewsLoading] = useState(true);
     const [loansLoading, setLoansLoading] = useState(true);
     const [reservationsLoading, setReservationsLoading] = useState(true);
     const [loanStatsLoading, setLoanStatsLoading] = useState(false);
     const [catalogueStatsLoading, setCatalogueStatsLoading] = useState(false);
+    const [booksLoading, setBooksLoading] = useState(false);
     const [reviewsError, setReviewsError] = useState("");
     const [loansError, setLoansError] = useState("");
     const [reservationsError, setReservationsError] = useState("");
     const [loanStatsError, setLoanStatsError] = useState("");
     const [catalogueStatsError, setCatalogueStatsError] = useState("");
+    const [booksError, setBooksError] = useState("");
     const [activeFilter, setActiveFilter] = useState("all");
     const [processingId, setProcessingId] = useState(null);
+    const [bookModalOpen, setBookModalOpen] = useState(false);
+    const [bookModalMode, setBookModalMode] = useState("create");
+    const [selectedBook, setSelectedBook] = useState(null);
+    const [bookForm, setBookForm] = useState(buildBookFormState());
+    const [bookFormError, setBookFormError] = useState("");
+    const [bookSaving, setBookSaving] = useState(false);
     const [reservationFilters, setReservationFilters] = useState({
         status: "",
         bookId: "",
@@ -480,6 +730,42 @@ export default function DashboardPage() {
         }
     }
 
+    async function loadManagedBooks() {
+        setBooksLoading(true);
+        setBooksError("");
+
+        try {
+            const categoriesPromise = getCategories();
+            const firstBooksResponse = await getBooks({ page: 1, limit: 100, sort: "asc" });
+            const firstPageBooks = extractBooks(firstBooksResponse);
+            const totalPages = Math.max(1, Number(firstBooksResponse?.pages ?? firstBooksResponse?.pagination?.pages ?? 1));
+            let allBooks = [...firstPageBooks];
+
+            if (totalPages > 1) {
+                const remainingResponses = await Promise.all(
+                    Array.from({ length: totalPages - 1 }, (_, index) =>
+                        getBooks({ page: index + 2, limit: 100, sort: "asc" })
+                    )
+                );
+
+                allBooks = [
+                    ...allBooks,
+                    ...remainingResponses.flatMap((response) => extractBooks(response)),
+                ];
+            }
+
+            const categoriesResponse = await categoriesPromise;
+
+            setManagedBooks(allBooks);
+            setCategories(extractCategories(categoriesResponse));
+        } catch (err) {
+            setManagedBooks([]);
+            setBooksError(err.message || "Impossible de charger la gestion des livres.");
+        } finally {
+            setBooksLoading(false);
+        }
+    }
+
     useEffect(() => {
         if (!searchParams.get("tab")) {
             const nextSearchParams = new URLSearchParams(searchParams);
@@ -494,6 +780,7 @@ export default function DashboardPage() {
         loadReservations();
         loadLoanStats();
         loadCatalogueStats();
+        loadManagedBooks();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isLibrarian, canSeeCatalogueStats]);
 
@@ -616,8 +903,121 @@ export default function DashboardPage() {
         }
     }
 
+    function openCreateBookModal() {
+        setBookModalMode("create");
+        setSelectedBook(null);
+        setBookForm(buildBookFormState());
+        setBookFormError("");
+        setBookModalOpen(true);
+    }
+
+    function openEditBookModal(book) {
+        setBookModalMode("edit");
+        setSelectedBook(book);
+        setBookForm(buildBookFormState(book));
+        setBookFormError("");
+        setBookModalOpen(true);
+    }
+
+    function closeBookModal() {
+        setBookModalOpen(false);
+        setSelectedBook(null);
+        setBookForm(buildBookFormState());
+        setBookFormError("");
+        setBookSaving(false);
+    }
+
+    function updateBookFormField(field, value) {
+        setBookForm((current) => ({ ...current, [field]: value }));
+    }
+
+    function buildBookPayload(form) {
+        return {
+            title: form.title.trim(),
+            author: form.author.trim(),
+            description: form.description.trim(),
+            isbn: form.isbn.trim(),
+            publishedAt: form.publishedAt.trim(),
+            totalCopies: Number(form.totalCopies),
+            availableCopies: Number(form.availableCopies),
+            image: form.image.trim(),
+            ...(form.categoryId ? { categoryId: Number(form.categoryId) } : {}),
+        };
+    }
+
+    async function handleBookSubmit(event) {
+        event.preventDefault();
+
+        const payload = buildBookPayload(bookForm);
+
+        if (!payload.title || !payload.author) {
+            setBookFormError("Le titre et l'auteur sont obligatoires.");
+            return;
+        }
+
+        if (!Number.isFinite(payload.totalCopies) || payload.totalCopies < 1) {
+            setBookFormError("Le nombre total doit etre superieur ou egal a 1.");
+            return;
+        }
+
+        if (!Number.isFinite(payload.availableCopies) || payload.availableCopies < 0) {
+            setBookFormError("Le nombre disponible doit etre superieur ou egal a 0.");
+            return;
+        }
+
+        setBookSaving(true);
+        setBookFormError("");
+        setBooksError("");
+
+        try {
+            if (bookModalMode === "create") {
+                await createBook(payload);
+            } else if (selectedBook?.id || selectedBook?._id) {
+                await updateBook(selectedBook.id || selectedBook._id, payload);
+            }
+
+            closeBookModal();
+            await Promise.all([loadManagedBooks(), loadCatalogueStats()]);
+        } catch (err) {
+            setBookFormError(err.message || "Impossible d'enregistrer ce livre.");
+            setBookSaving(false);
+        }
+    }
+
+    async function handleDeleteBook(book) {
+        const bookId = book?.id || book?._id;
+
+        if (!bookId) {
+            return;
+        }
+
+        setProcessingId(`book-${bookId}`);
+        setBooksError("");
+
+        try {
+            await deleteBook(bookId);
+            await Promise.all([loadManagedBooks(), loadCatalogueStats()]);
+        } catch (err) {
+            setBooksError(err.message || "Impossible de supprimer ce livre.");
+        } finally {
+            setProcessingId(null);
+        }
+    }
+
     return (
         <div className="min-h-screen bg-[#f2f2f2]">
+            <BookManagementModal
+                open={bookModalOpen}
+                mode={bookModalMode}
+                form={bookForm}
+                categories={categories}
+                error={bookFormError}
+                saving={bookSaving}
+                onChange={updateBookFormField}
+                onClose={closeBookModal}
+                onSubmit={handleBookSubmit}
+            />
+
             <HeaderComponent
                 subtitle="Gestion librairie"
                 user={user}
@@ -778,28 +1178,14 @@ export default function DashboardPage() {
 
                     {activeTab === "books" && (
                         <>
-                            <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                                <StatCard
-                                    label="Livres au catalogue"
-                                    value={catalogueStatsLoading ? "..." : catalogueStats?.totalBooks ?? "-"}
-                                />
-                                <StatCard
-                                    label="Reservations totales"
-                                    value={catalogueStatsLoading ? "..." : catalogueStats?.totalReservations ?? "-"}
-                                />
-                                <StatCard
-                                    label="Reservations actives"
-                                    value={catalogueStatsLoading ? "..." : catalogueStats?.currentReservations ?? "-"}
-                                    tone="warning"
-                                />
-                                <StatCard
-                                    label="Reservations historiques"
-                                    value={catalogueStatsLoading ? "..." : catalogueStats?.pastReservations ?? "-"}
-                                    tone="success"
-                                />
-                            </section>
-
                             <section className="flex flex-wrap gap-3">
+                                <button
+                                    type="button"
+                                    onClick={openCreateBookModal}
+                                    className="rounded-xl border border-emerald-600 bg-emerald-600 px-4 py-3 text-sm font-medium text-white"
+                                >
+                                    Ajouter un livre
+                                </button>
                                 <Link
                                     to="/books"
                                     className="rounded-xl border border-slate-900 bg-slate-900 px-4 py-3 text-sm font-medium text-white"
@@ -809,25 +1195,66 @@ export default function DashboardPage() {
                                 <QuickActionButton label="Retour dashboard" onClick={() => setActiveTab("dashboard")} />
                             </section>
 
-                            {catalogueStatsError && <ErrorState message={catalogueStatsError} />}
+                            {booksError && <ErrorState message={booksError} />}
 
-                            {catalogueStatsLoading && (
-                                <EmptyState message="Chargement de la gestion livres..." />
+                            {booksLoading && (
+                                <EmptyState message="Chargement des livres a gerer..." />
                             )}
 
-                            {!catalogueStatsLoading && !catalogueStatsError && topBorrowedBooks.length === 0 && (
-                                <EmptyState message="Aucun livre remonte dans les statistiques du catalogue." />
+                            {!booksLoading && managedBooks.length === 0 && (
+                                <EmptyState message="Aucun livre a gerer pour le moment." />
                             )}
 
-                            {!catalogueStatsLoading && !catalogueStatsError && topBorrowedBooks.length > 0 && (
+                            {!booksLoading && managedBooks.length > 0 && (
                                 <section className="space-y-4">
                                     <div className="flex items-center justify-between">
-                                        <h2 className="text-lg font-semibold text-slate-800">Top 5 des livres les plus empruntes</h2>
+                                        <h2 className="text-lg font-semibold text-slate-800">Liste des livres</h2>
                                         <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
-                                            {topBorrowedBooks.length}
+                                            {managedBooks.length}
                                         </span>
                                     </div>
-                                    <TopBorrowedBooksTable rows={topBorrowedBooks} />
+
+                                    <div className="grid gap-4 xl:grid-cols-2">
+                                        {managedBooks.map((book) => {
+                                            const bookId = book?.id || book?._id;
+                                            const isDeleting = processingId === `book-${bookId}`;
+
+                                            return (
+                                                <article key={bookId} className="rounded-2xl border border-slate-200 bg-white p-5">
+                                                    <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                                                        <div className="space-y-2">
+                                                            <p className="text-lg font-semibold text-slate-900">{book?.title || "Livre sans titre"}</p>
+                                                            <p className="text-sm text-slate-600">{book?.author || "Auteur inconnu"}</p>
+                                                            <div className="grid gap-2 sm:grid-cols-2">
+                                                                <p className="text-sm text-slate-500">ISBN: {book?.isbn || "Non renseigne"}</p>
+                                                                <p className="text-sm text-slate-500">
+                                                                    Disponibles: {book?.availableCopies ?? 0}/{book?.totalCopies ?? 0}
+                                                                </p>
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="flex shrink-0 flex-wrap gap-2">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => openEditBookModal(book)}
+                                                                className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-2 text-sm font-medium text-amber-700"
+                                                            >
+                                                                Modifier
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handleDeleteBook(book)}
+                                                                disabled={isDeleting}
+                                                                className="rounded-xl border border-red-300 bg-red-50 px-4 py-2 text-sm font-medium text-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+                                                            >
+                                                                {isDeleting ? "Suppression..." : "Supprimer"}
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </article>
+                                            );
+                                        })}
+                                    </div>
                                 </section>
                             )}
                         </>

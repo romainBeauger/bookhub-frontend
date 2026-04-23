@@ -187,6 +187,53 @@ export const getAllReviews = async () => {
     return await response.json();
 };
 
+export const createBook = async (bookData) => {
+    const response = await fetch("/api/books", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            ...getAuthHeaders(),
+        },
+        body: JSON.stringify(bookData),
+    });
+
+    if (!response.ok) {
+        await handleApiError(response, "Impossible de creer ce livre.");
+    }
+
+    return await response.json();
+};
+
+export const updateBook = async (bookId, bookData) => {
+    const response = await fetch(`/api/books/${bookId}`, {
+        method: "PATCH",
+        headers: {
+            "Content-Type": "application/json",
+            ...getAuthHeaders(),
+        },
+        body: JSON.stringify(bookData),
+    });
+
+    if (!response.ok) {
+        await handleApiError(response, "Impossible de modifier ce livre.");
+    }
+
+    return await response.json();
+};
+
+export const deleteBook = async (bookId) => {
+    const response = await fetch(`/api/books/${bookId}`, {
+        method: "DELETE",
+        headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+        await handleApiError(response, "Impossible de supprimer ce livre.");
+    }
+
+    return true;
+};
+
 export const moderateReview = async (reviewId, isModerated = true) => {
     const response = await fetch(`/api/reviews/${reviewId}/moderate`, {
         method: "PATCH",
