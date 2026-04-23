@@ -18,6 +18,10 @@ export function hasRole(user, role) {
     return getUserRoles(user).includes(role);
 }
 
-export function hasStaffAccess(user) {
+export function hasLibrarianAccess(user) {
     return hasRole(user, "ROLE_LIBRARIAN") || hasRole(user, "ROLE_ADMIN");
+}
+
+export function hasStaffAccess(user) {
+    return hasLibrarianAccess(user);
 }
