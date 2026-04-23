@@ -337,7 +337,7 @@ export default function BookDetailsPage() {
 
                     <section className="bg-[#efefef] p-5 md:p-6">
                         {loading && (
-                            <div className="flex min-h-[280px] items-center justify-center border border-slate-300 bg-[#f8f8f8]">
+                            <div className="flex min-h-70 items-center justify-center border border-slate-300 bg-[#f8f8f8]">
                                 <div className="flex items-center gap-3 text-slate-600">
                                     <img src="/spinner.svg" alt="Chargement" className="h-6 w-6" />
                                     <span>Chargement du livre...</span>
@@ -355,8 +355,8 @@ export default function BookDetailsPage() {
                         {!loading && !error && book && (
                             <div className="overflow-hidden border-2 border-violet-500 bg-white">
                                 <div className="flex flex-col gap-8 border-b border-slate-400 p-5 lg:flex-row lg:items-start lg:p-6">
-                                    <div className="shrink-0 overflow-hidden rounded-[26px] border-2 border-slate-500 bg-[#404040] lg:w-[220px]">
-                                        <div className="grid h-[280px] place-items-center rounded-[22px] text-center text-lg font-semibold text-white sm:h-[320px]">
+                                    <div className="shrink-0 overflow-hidden rounded-[26px] border-2 border-slate-500 bg-[#404040] lg:w-55">
+                                        <div className="grid h-70 place-items-center rounded-[22px] text-center text-lg font-semibold text-white sm:h-80">
                                             <BookCoverImage
                                                 image={book?.image}
                                                 alt={book.title}
@@ -366,7 +366,7 @@ export default function BookDetailsPage() {
                                         </div>
                                     </div>
 
-                                    <div className="flex min-h-[180px] min-w-0 flex-1 flex-col justify-between space-y-5 sm:min-h-[220px]">
+                                    <div className="flex min-h-45 min-w-0 flex-1 flex-col justify-between space-y-5 sm:min-h-55">
                                         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                                             <div>
                                                 <h2 className="text-3xl font-medium text-slate-950 lg:text-[2.1rem]">
@@ -504,22 +504,25 @@ export default function BookDetailsPage() {
                                             >
                                                 {currentUserReview ? "Mon avis" : "Noter"}
                                             </button>
-                                            <button
-                                                type="button"
-                                                onClick={handleBorrow}
-                                                disabled={!canBorrow || borrowSubmitting}
-                                                className="rounded-xl border border-emerald-500 bg-white px-5 py-2 text-sm font-medium text-emerald-600 disabled:cursor-not-allowed disabled:border-slate-300 disabled:text-slate-400"
-                                            >
-                                                {borrowSubmitting ? "Emprunt..." : canBorrow ? "Emprunter" : "Indisponible"}
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={handleReserve}
-                                                disabled={reserveSubmitting || reservationLimitReached}
-                                                className="rounded-xl border border-amber-400 bg-white px-5 py-2 text-sm font-medium text-amber-700 disabled:cursor-not-allowed disabled:border-slate-300 disabled:text-slate-400"
-                                            >
-                                                {reserveSubmitting ? "Reservation..." : reservationLimitReached ? "Limite atteinte" : "Reserver"}
-                                            </button>
+                                            {canBorrow ? (
+                                                <button
+                                                    type="button"
+                                                    onClick={handleBorrow}
+                                                    disabled={borrowSubmitting}
+                                                    className="rounded-xl border border-emerald-500 bg-white px-5 py-2 text-sm font-medium text-emerald-600 disabled:cursor-not-allowed disabled:border-slate-300 disabled:text-slate-400"
+                                                >
+                                                    {borrowSubmitting ? "Emprunt..." : "Emprunter"}
+                                                </button>
+                                            ) : (
+                                                <button
+                                                    type="button"
+                                                    onClick={handleReserve}
+                                                    disabled={reserveSubmitting || reservationLimitReached}
+                                                    className="rounded-xl border border-amber-400 bg-white px-5 py-2 text-sm font-medium text-amber-700 disabled:cursor-not-allowed disabled:border-slate-300 disabled:text-slate-400"
+                                                >
+                                                    {reserveSubmitting ? "Reservation..." : reservationLimitReached ? "Limite atteinte" : "Reserver"}
+                                                </button>
+                                            )}
                                         </div>
                                     </div>
                                     {reservationLimitReached && (
