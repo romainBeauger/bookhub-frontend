@@ -10,6 +10,7 @@ export default function RegisterForm() {
         nom: "",
         prenom: "",
         email: "",
+        phone: "",
         mot_de_passe: "",
         confirmation: "",
     })
@@ -130,17 +131,30 @@ export default function RegisterForm() {
                         </div>
                     </div>
 
-                    <div className="w-full">
-                        <input
-                            className={"border border-gray-500 rounded-lg px-3 py-2 w-full"}
-                            type="email"
-                            name="email"
-                            id="email"
-                            placeholder="Entrez votre email"
-                            value={dataForm.email}
-                            onChange={handleChange}
-                        />
-                        {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
+                    <div className="flex justify-around items-start gap-4">
+                        <div className="flex-1">
+                            <input
+                                className={"border border-gray-500 rounded-lg px-3 py-2 w-full"}
+                                type="email"
+                                name="email"
+                                id="email"
+                                placeholder="Entrez votre email"
+                                value={dataForm.email}
+                                onChange={handleChange}
+                            />
+                            {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
+                        </div>
+                        <div className="flex-1">
+                            <input
+                                className="border border-gray-500 rounded-lg px-3 py-2 w-full"
+                                type="tel"
+                                name="phone"
+                                id="phone"
+                                placeholder="Téléphone (optionnel)"
+                                value={dataForm.phone}
+                                onChange={handleChange}
+                            />
+                        </div>
                     </div>
 
                     <div className="w-full">
