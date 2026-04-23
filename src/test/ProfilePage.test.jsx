@@ -66,6 +66,7 @@ describe('ProfilePage', () => {
             prenom: 'Pierre',
             nom: 'Dupont',
             email: 'jean@test.com',
+            phone: '',
         })
     })
 

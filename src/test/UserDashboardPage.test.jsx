@@ -85,9 +85,9 @@ describe('UserDashboardPage', () => {
     it('affiche "0 réservation" si pas de réservations', async () => {
         renderPage()
 
-        const labels = await screen.findAllByText('Réservations en attente')
+        const labels = await screen.findAllByText('Reservations en attente')
         expect(labels.length).toBeGreaterThan(0)
-        expect(await screen.findByText('Aucune réservation en attente.')).toBeInTheDocument()
+        expect(await screen.findByText('Aucune reservation en attente.')).toBeInTheDocument()
     })
 
     it('le lien vers /my-loans est présent', async () => {

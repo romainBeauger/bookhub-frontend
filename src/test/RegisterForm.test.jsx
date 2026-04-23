@@ -101,7 +101,8 @@ describe('RegisterForm', () => {
             prenom: 'Jean',
             email: 'jean@mail.com',
             mot_de_passe: 'password123',
-            confirmation: 'password123'
+            confirmation: 'password123',
+            phone: ''
         })
 
         // findByText attend que l'élément apparaisse (async)
