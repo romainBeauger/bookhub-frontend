@@ -7,7 +7,7 @@ import RatingStars from "../components/Reviews/RatingStars.jsx";
 import ReviewCard from "../components/Reviews/ReviewCard.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import { createBookReview, getBookById, getBookReviews } from "../services/bookService.js";
-import { borrowBook } from "../services/loanService.js";
+import { borrowBook, getMyLoans } from "../services/loanService.js";
 import { createReservation, getMyReservations } from "../services/reservationService.js";
 import {
     countActiveReservations,
@@ -100,6 +100,7 @@ export default function BookDetailsPage() {
     const [reserveSubmitting, setReserveSubmitting] = useState(false);
     const [reservationCount, setReservationCount] = useState(0);
     const [toast, setToast] = useState(null);
+    const [hasLoanedBook, setHasLoanedBook] = useState(false);
 
     useEffect(() => {
         let ignore = false;
@@ -162,6 +163,35 @@ export default function BookDetailsPage() {
             ignore = true;
         };
     }, [user]);
+
+    useEffect(() => {
+        let ignore = false;
+
+        async function checkUserLoans() {
+            if (!user) {
+                return;
+            }
+
+            try {
+                const loans = await getMyLoans();
+                const bookIdNum = Number(id);
+
+                if (!ignore) {
+                    setHasLoanedBook(loans.some((loan) => loan.bookId === bookIdNum));
+                }
+            } catch {
+                if (!ignore) {
+                    setHasLoanedBook(false);
+                }
+            }
+        }
+
+        checkUserLoans();
+
+        return () => {
+            ignore = true;
+        };
+    }, [user, id]);
 
     useEffect(() => {
         let ignore = false;
@@ -497,13 +527,15 @@ export default function BookDetailsPage() {
                                         </Link>
 
                                         <div className="flex flex-wrap gap-3">
-                                            <button
-                                                type="button"
-                                                onClick={() => setReviewFormOpen((currentValue) => !currentValue)}
-                                                className="rounded-xl border border-slate-700 bg-white px-5 py-2 text-sm font-medium text-slate-900"
-                                            >
-                                                {currentUserReview ? "Mon avis" : "Noter"}
-                                            </button>
+                                            {(hasLoanedBook || currentUserReview) && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setReviewFormOpen((currentValue) => !currentValue)}
+                                                    className="rounded-xl border border-slate-700 bg-white px-5 py-2 text-sm font-medium text-slate-900"
+                                                >
+                                                    {currentUserReview ? "Mon avis" : "Noter"}
+                                                </button>
+                                            )}
                                             {canBorrow ? (
                                                 <button
                                                     type="button"
