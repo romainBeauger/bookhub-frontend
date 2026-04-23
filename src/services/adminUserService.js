@@ -102,6 +102,7 @@ export async function suspendAdminUser(userId, duration) {
             method: "PATCH",
             headers: getAuthHeaders(),
             body: JSON.stringify({
+                duree_jours: duration,
                 duration,
                 durationDays: duration,
             }),
