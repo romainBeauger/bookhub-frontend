@@ -1,19 +1,53 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=Poppins:wght@500;600;700&display=swap');
+
 :root {
-  --color-primary: #38bdf8;
-  --color-error: #ef4444;
-  --color-text: #1a1a1a;
-  --color-text-muted: #6b7280;
-  --color-bg: #f3f4f6;
-  --color-border: #d1d5db;
-  --color-white: #ffffff;
-  --radius-input: 8px;
-  --radius-card: 16px;
+  --navy: #202833;
+  --navy-2: #31424D;
+  --beige: #D7C5AE;
+  --tangerine: #B86A4F;
+
+  --bg-main: #fbf5f0;
+  --bg-surface: #fffdfa;
+  --bg-accent: #fff1e6;
+
+  --text-main: #202c39;
+  --text-muted: #5f6b76;
+  --text-soft: #7c8893;
+
+  --border-soft: rgba(32, 44, 57, 0.14);
+
+  --success-bg: #ecfdf3;
+  --success-fg: #166534;
+  --danger-bg: #fef2f2;
+  --danger-fg: #991b1b;
+  --warning-bg: #fff7ed;
+  --warning-fg: #9a3412;
+
+  --radius-card: 22px;
+  --radius-control: 14px;
+
+  --shadow-soft: 0 14px 32px rgba(32, 44, 57, 0.08);
+  --shadow-medium: 0 18px 48px rgba(32, 44, 57, 0.12);
 }
 
 body {
-  font-family: "Inter", sans-serif;
-  color: black;
-  background-color: var(--color-secondary);
+  font-family: 'Inter', sans-serif;
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  -webkit-font-smoothing: antialiased;
 }
 
-/*# sourceMappingURL=main.css.map */
+h1, h2, h3 {
+  font-family: 'Poppins', sans-serif;
+}
+
+a,
+button,
+[role="button"] {
+  cursor: pointer;
+}
+
+button:disabled,
+[role="button"][aria-disabled="true"] {
+  cursor: not-allowed;
+}

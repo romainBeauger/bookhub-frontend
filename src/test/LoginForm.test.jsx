@@ -43,8 +43,8 @@ describe('LoginForm', () => {
     it('affiche tous les champs du formulaire', () => {
         renderLoginForm()
 
-        expect(screen.getByPlaceholderText('Entrez votre email')).toBeInTheDocument()
-        expect(screen.getByPlaceholderText('Entrez votre mot de passe')).toBeInTheDocument()
+        expect(screen.getByPlaceholderText('votre@email.com')).toBeInTheDocument()
+        expect(screen.getByPlaceholderText('••••••••')).toBeInTheDocument()
         expect(screen.getByRole('button', { name: /se connecter/i })).toBeInTheDocument()
     })
 
@@ -63,7 +63,7 @@ describe('LoginForm', () => {
     it('affiche une erreur si le format email est invalide', () => {
         renderLoginForm()
 
-        fireEvent.change(screen.getByPlaceholderText('Entrez votre email'), {
+        fireEvent.change(screen.getByPlaceholderText('votre@email.com'), {
             target: { value: 'email-invalide' }
         })
 
@@ -80,8 +80,8 @@ describe('LoginForm', () => {
         const user = userEvent.setup()
         renderLoginForm()
 
-        await user.type(screen.getByPlaceholderText('Entrez votre email'), 'jean@mail.com')
-        await user.type(screen.getByPlaceholderText('Entrez votre mot de passe'), 'password123')
+        await user.type(screen.getByPlaceholderText('votre@email.com'), 'jean@mail.com')
+        await user.type(screen.getByPlaceholderText('••••••••'), 'password123')
         await user.click(screen.getByRole('button', { name: /se connecter/i }))
 
         // Vérif que loginApi() a bien été appelé avec les bonnes données
@@ -106,8 +106,8 @@ describe('LoginForm', () => {
         const user = userEvent.setup()
         renderLoginForm()
 
-        await user.type(screen.getByPlaceholderText('Entrez votre email'), 'jean@mail.com')
-        await user.type(screen.getByPlaceholderText('Entrez votre mot de passe'), 'password123')
+        await user.type(screen.getByPlaceholderText('votre@email.com'), 'jean@mail.com')
+        await user.type(screen.getByPlaceholderText('••••••••'), 'password123')
         await user.click(screen.getByRole('button', { name: /se connecter/i }))
 
         expect(await screen.findByText('Identifiants incorrects', { selector: 'p' })).toBeInTheDocument()

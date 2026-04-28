@@ -142,26 +142,25 @@ export default function AdminReservationsPage() {
     }
 
     return (
-        <div className="min-h-screen bg-[#f2f2f2]">
+        <div className="flex min-h-screen" style={{ background: "var(--bg-main)" }}>
             {toast && (
-                <div className={`fixed right-5 top-5 z-50 rounded-lg px-4 py-3 text-sm text-white shadow-lg ${
+                <div className={`fixed right-5 bottom-5 z-50 rounded-xl px-4 py-3 text-sm text-white shadow-lg ${
                     toast.type === "success" ? "bg-green-500" : "bg-red-500"
                 }`}>
                     {toast.message}
                 </div>
             )}
 
-            <HeaderComponent
-                subtitle="Gestion des reservations"
-                user={user}
-                onMenuToggle={() => setNavOpen((currentValue) => !currentValue)}
+            <BooksSidebar
+                showFilters={false}
+                mobileOpen={navOpen}
+                onClose={() => setNavOpen(false)}
             />
 
-            <div className="grid lg:grid-cols-[280px_1fr]">
-                <BooksSidebar
-                    showFilters={false}
-                    mobileOpen={navOpen}
-                    onClose={() => setNavOpen(false)}
+            <div className="flex-1 flex flex-col min-w-0">
+                <HeaderComponent
+                    user={user}
+                    onMenuToggle={() => setNavOpen((currentValue) => !currentValue)}
                 />
 
                 <main className="space-y-6 p-6">
@@ -374,3 +373,4 @@ export default function AdminReservationsPage() {
         </div>
     );
 }
+

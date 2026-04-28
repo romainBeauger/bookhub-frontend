@@ -340,32 +340,31 @@ export default function BookDetailsPage() {
     const reservationLimitReached = reservationCount >= RESERVATION_LIMIT;
 
     return (
-        <main className="min-h-screen bg-[#f2f2f2]">
+        <div className="flex min-h-screen" style={{ background: "var(--bg-main)" }}>
             {toast && (
-                <div className={`fixed right-5 top-5 z-50 rounded-lg px-4 py-3 text-sm text-white shadow-lg ${
+                <div className={`fixed right-5 bottom-5 z-50 rounded-xl px-4 py-3 text-sm text-white shadow-lg ${
                     toast.type === "success" ? "bg-green-500" : "bg-red-500"
                 }`}>
                     {toast.message}
                 </div>
             )}
-            <section className="w-full overflow-hidden border border-slate-300 bg-white">
+
+            <BooksSidebar
+                availableCount={0}
+                unavailableCount={0}
+                categoryCounts={{}}
+                showFilters={false}
+                mobileOpen={navOpen}
+                onClose={() => setNavOpen(false)}
+            />
+
+            <div className="flex-1 flex flex-col min-w-0">
                 <HeaderComponent
-                    subtitle="Page Detail d'un livre"
                     user={user}
                     onMenuToggle={() => setNavOpen((currentValue) => !currentValue)}
                 />
 
-                <div className="grid min-h-[calc(100vh-8rem)] lg:grid-cols-[220px_1fr]">
-                    <BooksSidebar
-                        availableCount={0}
-                        unavailableCount={0}
-                        categoryCounts={{}}
-                        showFilters={false}
-                        mobileOpen={navOpen}
-                        onClose={() => setNavOpen(false)}
-                    />
-
-                    <section className="bg-[#efefef] p-5 md:p-6">
+                <section className="p-5 md:p-6">
                         {loading && (
                             <div className="flex min-h-70 items-center justify-center border border-slate-300 bg-[#f8f8f8]">
                                 <div className="flex items-center gap-3 text-slate-600">
@@ -383,9 +382,9 @@ export default function BookDetailsPage() {
                         )}
 
                         {!loading && !error && book && (
-                            <div className="overflow-hidden border-2 border-violet-500 bg-white">
+                            <div className="overflow-hidden rounded-3xl" style={{ background: "var(--bg-surface)", border: "1px solid var(--border-soft)", boxShadow: "var(--shadow-medium)" }}>
                                 <div className="flex flex-col gap-8 border-b border-slate-400 p-5 lg:flex-row lg:items-start lg:p-6">
-                                    <div className="shrink-0 overflow-hidden rounded-[26px] border-2 border-slate-500 bg-[#404040] lg:w-55">
+                                    <div className="shrink-0 overflow-hidden rounded-[26px] lg:w-55" style={{ background: "var(--navy-2)" }}>
                                         <div className="grid h-70 place-items-center rounded-[22px] text-center text-lg font-semibold text-white sm:h-80">
                                             <BookCoverImage
                                                 image={book?.image}
@@ -654,9 +653,8 @@ export default function BookDetailsPage() {
                                 </div>
                             </div>
                         )}
-                    </section>
-                </div>
-            </section>
-        </main>
+                </section>
+            </div>
+        </div>
     );
 }
