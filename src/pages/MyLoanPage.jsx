@@ -105,24 +105,23 @@ export default function MyLoanPage() {
     }
 
     return (
-        <div className="min-h-screen bg-[#f2f2f2]">
+        <div className="flex min-h-screen" style={{ background: "var(--bg-main)" }}>
             {toast && (
-                <div className={`fixed right-5 top-5 z-50 rounded-lg px-4 py-3 text-sm text-white shadow-lg ${
+                <div className={`fixed right-5 bottom-5 z-50 rounded-xl px-4 py-3 text-sm text-white shadow-lg ${
                     toast.type === 'success' ? 'bg-green-500' : 'bg-red-500'
                 }`}>
                     {toast.message}
                 </div>
             )}
-            <HeaderComponent
-                subtitle="Page Mes emprunts - User"
-                user={user}
-                onMenuToggle={() => setNavOpen(o => !o)}
+            <BooksSidebar
+                showFilters={false}
+                mobileOpen={navOpen}
+                onClose={() => setNavOpen(false)}
             />
-            <div className="grid lg:grid-cols-[280px_1fr]">
-                <BooksSidebar
-                    showFilters={false}
-                    mobileOpen={navOpen}
-                    onClose={() => setNavOpen(false)}
+            <div className="flex-1 flex flex-col min-w-0">
+                <HeaderComponent
+                    user={user}
+                    onMenuToggle={() => setNavOpen(o => !o)}
                 />
                 <main className="p-6 space-y-6">
 
@@ -141,9 +140,8 @@ export default function MyLoanPage() {
 
                     {/* Alerte retard */}
                     {lateCount > 0 && (
-                        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 font-medium">
-                            ⚠️ Vous avez {lateCount} emprunt{lateCount > 1 ? 's' : ''} en retard. Vous ne pouvez pas emprunter de nouveaux livres tant que vous ne les avez
-                            pas rendus.
+                        <div className="rounded-xl px-4 py-3 text-sm font-medium" style={{ background: "var(--danger-bg)", color: "var(--danger-fg)", border: "1px solid #fecaca" }}>
+                            Vous avez {lateCount} emprunt{lateCount > 1 ? 's' : ''} en retard. Vous ne pouvez pas emprunter de nouveaux livres tant que vous ne les avez pas rendus.
                         </div>
                     )}
 
@@ -153,10 +151,10 @@ export default function MyLoanPage() {
 
                     {/* Emprunts en cours */}
                     {!loading && (
-                        <section className="rounded-xl border border-slate-200 bg-white p-4 space-y-3">
+                        <section className="rounded-2xl p-4 space-y-3" style={{ background: "var(--bg-surface)", border: "1px solid var(--border-soft)", boxShadow: "var(--shadow-soft)" }}>
                             <div className="flex items-center justify-between">
-                                <h2 className="font-semibold text-slate-700">Emprunts en cours</h2>
-                                <span className="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded-full">
+                                <h2 className="font-semibold" style={{ color: "var(--text-main)" }}>Emprunts en cours</h2>
+                                <span className="text-xs px-2 py-1 rounded-full" style={{ background: "var(--bg-accent)", color: "var(--tangerine)" }}>
                                     {activeLoans.length} actif{activeLoans.length > 1 ? 's' : ''}
                                 </span>
                             </div>
@@ -177,8 +175,8 @@ export default function MyLoanPage() {
 
                     {/* Historique */}
                     {!loading && history.length > 0 && (
-                        <section className="rounded-xl border border-slate-200 bg-white p-4 space-y-3">
-                            <h2 className="font-semibold text-slate-700">Historique</h2>
+                        <section className="rounded-2xl p-4 space-y-3" style={{ background: "var(--bg-surface)", border: "1px solid var(--border-soft)", boxShadow: "var(--shadow-soft)" }}>
+                            <h2 className="font-semibold" style={{ color: "var(--text-main)" }}>Historique</h2>
                             {history.map(loan => (
                                 <HistoryCard
                                     key={loan.id}
@@ -195,7 +193,6 @@ export default function MyLoanPage() {
 
                 </main>
             </div>
-
         </div>
     )
-};
+}

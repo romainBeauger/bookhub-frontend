@@ -101,18 +101,16 @@ export default function ProfilePage() {
     }
 
     return (
-        <div className="min-h-screen bg-[#f2f2f2]">
-            <HeaderComponent
-                subtitle="Mon profil"
-                user={user}
-                onMenuToggle={() => setNavOpen(o => !o)}
+        <div className="flex min-h-screen" style={{ background: "var(--bg-main)" }}>
+            <BooksSidebar
+                showFilters={false}
+                mobileOpen={navOpen}
+                onClose={() => setNavOpen(false)}
             />
-            <div className="grid lg:grid-cols-[280px_1fr]">
-                <BooksSidebar
-                    showFilters={false}
-                    mobileOpen={navOpen}
-                    onClose={() => setNavOpen(false)}
-                    onLogout={handleLogout}
+            <div className="flex-1 flex flex-col min-w-0">
+                <HeaderComponent
+                    user={user}
+                    onMenuToggle={() => setNavOpen(o => !o)}
                 />
                 <main className="p-6 space-y-6">
 
@@ -137,36 +135,34 @@ export default function ProfilePage() {
 
                     {/* Encart profil */}
                     {!loadingProfile && profile && (
-                        <section className="rounded-xl border border-slate-200 bg-white p-5 space-y-4">
+                        <section className="rounded-2xl p-5 space-y-4" style={{ background: "var(--bg-surface)", border: "1px solid var(--border-soft)", boxShadow: "var(--shadow-soft)" }}>
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-3">
-                                    <div className="h-10 w-10 rounded-full border-2 border-slate-300 flex items-center justify-center text-slate-500">
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5.121 17.804A9 9 0 1118.88 6.196M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                                        </svg>
+                                    <div className="h-10 w-10 rounded-full flex items-center justify-center font-semibold text-white text-sm" style={{ background: "var(--tangerine)" }}>
+                                        {(profile.prenom?.[0] || "").toUpperCase()}{(profile.nom?.[0] || "").toUpperCase()}
                                     </div>
                                     <div>
                                         <p className="font-semibold text-slate-800">{profile.prenom} {profile.nom}</p>
                                         <p className="text-sm text-slate-500">{profile.email}</p>
                                     </div>
                                 </div>
-                                <span className="rounded-full bg-slate-100 px-3 py-1 text-sm font-medium text-slate-600">
-                                      {getRoleLabel(profile.roles)}
-                                  </span>
+                                <span className="rounded-full px-3 py-1 text-sm font-medium" style={{ background: "var(--bg-accent)", color: "var(--tangerine)" }}>
+                                    {getRoleLabel(profile.roles)}
+                                </span>
                             </div>
 
                             <div className="grid grid-cols-3 gap-3">
-                                <div className="rounded-xl bg-slate-100 px-4 py-3 text-center">
-                                    <p className="text-xl font-bold text-slate-800">0</p>
-                                    <p className="text-xs text-slate-500">réservations</p>
+                                <div className="rounded-xl px-4 py-3 text-center" style={{ background: "var(--bg-accent)" }}>
+                                    <p className="text-xl font-bold" style={{ color: "var(--tangerine)" }}>0</p>
+                                    <p className="text-xs" style={{ color: "var(--text-muted)" }}>réservations</p>
                                 </div>
-                                <div className="rounded-xl bg-slate-100 px-4 py-3 text-center">
-                                    <p className="text-xl font-bold text-slate-800">{loansCount}</p>
-                                    <p className="text-xs text-slate-500">emprunts</p>
+                                <div className="rounded-xl px-4 py-3 text-center" style={{ background: "var(--bg-accent)" }}>
+                                    <p className="text-xl font-bold" style={{ color: "var(--tangerine)" }}>{loansCount}</p>
+                                    <p className="text-xs" style={{ color: "var(--text-muted)" }}>emprunts</p>
                                 </div>
-                                <div className="rounded-xl bg-slate-100 px-4 py-3 text-center">
-                                    <p className="text-xl font-bold text-slate-800">0</p>
-                                    <p className="text-xs text-slate-500">avis publiés</p>
+                                <div className="rounded-xl px-4 py-3 text-center" style={{ background: "var(--bg-accent)" }}>
+                                    <p className="text-xl font-bold" style={{ color: "var(--tangerine)" }}>0</p>
+                                    <p className="text-xs" style={{ color: "var(--text-muted)" }}>avis publiés</p>
                                 </div>
                             </div>
                         </section>
@@ -174,8 +170,8 @@ export default function ProfilePage() {
 
                     {/* Informations personnelles */}
                     {!loadingProfile && (
-                        <section className="rounded-xl border border-slate-200 bg-white p-6 space-y-4">
-                            <h2 className="font-semibold text-slate-700">Informations personnelles</h2>
+                        <section className="rounded-2xl p-6 space-y-4" style={{ background: "var(--bg-surface)", border: "1px solid var(--border-soft)", boxShadow: "var(--shadow-soft)" }}>
+                            <h2 className="font-semibold" style={{ color: "var(--text-main)" }}>Informations personnelles</h2>
 
                             {profileError && (
                                 <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{profileError}</p>
@@ -242,8 +238,8 @@ export default function ProfilePage() {
 
                     {/* Mot de passe */}
                     {!loadingProfile && (
-                        <section className="rounded-xl border border-slate-200 bg-white p-6 space-y-4">
-                            <h2 className="font-semibold text-slate-700">Modifier votre mot de passe</h2>
+                        <section className="rounded-2xl p-6 space-y-4" style={{ background: "var(--bg-surface)", border: "1px solid var(--border-soft)", boxShadow: "var(--shadow-soft)" }}>
+                            <h2 className="font-semibold" style={{ color: "var(--text-main)" }}>Modifier votre mot de passe</h2>
 
                             {passwordError && (
                                 <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{passwordError}</p>

@@ -191,18 +191,18 @@ function formatDate(value) {
 }
 
 function StatCard({ label, value, tone = "default" }) {
-    const toneClassName = tone === "warning"
-        ? "border-amber-200 bg-amber-50 text-amber-700"
+    const toneStyle = tone === "warning"
+        ? { background: "var(--warning-bg)", color: "var(--warning-fg)", border: "1px solid #fed7aa" }
         : tone === "success"
-            ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+            ? { background: "var(--success-bg)", color: "var(--success-fg)", border: "1px solid #bbf7d0" }
             : tone === "danger"
-                ? "border-red-200 bg-red-50 text-red-700"
-                : "border-slate-200 bg-white text-slate-800";
+                ? { background: "var(--danger-bg)", color: "var(--danger-fg)", border: "1px solid #fecaca" }
+                : { background: "var(--bg-surface)", color: "var(--text-main)", border: "1px solid var(--border-soft)", boxShadow: "var(--shadow-soft)" };
 
     return (
-        <article className={`rounded-2xl border p-5 ${toneClassName}`}>
+        <article className="rounded-2xl p-5" style={toneStyle}>
             <p className="text-sm font-medium">{label}</p>
-            <p className="mt-3 text-3xl font-semibold">{value}</p>
+            <p className="mt-3 text-3xl font-semibold" style={tone === "default" ? { color: "var(--tangerine)" } : {}}>{value}</p>
         </article>
     );
 }
@@ -212,11 +212,11 @@ function TabButton({ active, label, onClick }) {
         <button
             type="button"
             onClick={onClick}
-            className={`rounded-xl border px-4 py-2 text-sm font-medium transition-colors ${
-                active
-                    ? "border-slate-900 bg-slate-900 text-white"
-                    : "border-slate-300 bg-white text-slate-700"
-            }`}
+            className="rounded-xl border px-4 py-2 text-sm font-medium transition-all"
+            style={active
+                ? { background: "var(--navy)", borderColor: "var(--navy)", color: "white" }
+                : { background: "var(--bg-surface)", borderColor: "var(--border-soft)", color: "var(--text-main)" }
+            }
         >
             {label}
         </button>
@@ -1020,7 +1020,7 @@ export default function DashboardPage() {
     }
 
     return (
-        <div className="min-h-screen bg-[#f2f2f2]">
+        <div className="flex min-h-screen" style={{ background: "var(--bg-main)" }}>
             <BookManagementModal
                 open={bookModalOpen}
                 mode={bookModalMode}
@@ -1033,24 +1033,23 @@ export default function DashboardPage() {
                 onSubmit={handleBookSubmit}
             />
 
-            <HeaderComponent
-                subtitle={dashboardTitle}
-                user={user}
-                onMenuToggle={() => setNavOpen((currentValue) => !currentValue)}
+            <BooksSidebar
+                showFilters={false}
+                mobileOpen={navOpen}
+                onClose={() => setNavOpen(false)}
             />
 
-            <div className="grid lg:grid-cols-[280px_1fr]">
-                <BooksSidebar
-                    showFilters={false}
-                    mobileOpen={navOpen}
-                    onClose={() => setNavOpen(false)}
+            <div className="flex-1 flex flex-col min-w-0">
+                <HeaderComponent
+                    user={user}
+                    onMenuToggle={() => setNavOpen((currentValue) => !currentValue)}
                 />
 
                 <main className="space-y-6 p-6">
                     <div>
-                        <h1 className="text-2xl font-bold text-slate-800">{dashboardTitle}</h1>
-                        <p className="text-sm text-slate-500">
-                            Dashboard staff, suivi du catalogue, des emprunts, des reservations et des avis.
+                        <h1 className="text-2xl font-bold" style={{ color: "var(--text-main)" }}>{dashboardTitle}</h1>
+                        <p className="text-sm" style={{ color: "var(--text-muted)" }}>
+                            Dashboard staff, suivi du catalogue, des emprunts, des réservations et des avis.
                         </p>
                     </div>
 
@@ -1582,3 +1581,4 @@ export default function DashboardPage() {
         </div>
     );
 }
+

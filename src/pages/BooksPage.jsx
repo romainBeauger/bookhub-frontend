@@ -427,95 +427,119 @@ export default function BooksPage() {
     const reservationLimitReached = reservationCount >= RESERVATION_LIMIT;
 
     return (
-        <main className="min-h-screen bg-[#f2f2f2]">
+        <div className="flex min-h-screen" style={{ background: "var(--bg-main)" }}>
             {toast && (
-                <div className={`fixed top-5 right-5 z-50 px-4 py-3 rounded-lg text-white text-sm shadow-lg ${
+                <div className={`fixed bottom-5 right-5 z-50 px-4 py-3 rounded-xl text-white text-sm shadow-lg ${
                     toast.type === 'success' ? 'bg-green-500' : 'bg-red-500'
                 }`}>
                     {toast.message}
                 </div>
             )}
-            <section className="w-full overflow-hidden border border-slate-300 bg-white">
+
+            <BooksSidebar
+                showFilters={false}
+                mobileOpen={navOpen}
+                onClose={() => setNavOpen(false)}
+            />
+
+            <div className="flex-1 flex flex-col min-w-0">
                 <HeaderComponent
-                    subtitle="Page d'accueil - Catalogue"
                     user={user}
                     onMenuToggle={() => setNavOpen(o => !o)}
                 />
 
-                <div className="grid min-h-[calc(100vh-8rem)] lg:grid-cols-[280px_1fr]">
-                    <BooksSidebar
-                        availableCount={availableCount}
-                        unavailableCount={unavailableCount}
-                        categoryCounts={categoryCounts}
-                        categories={categories}
-                        filters={filters}
-                        onFilterChange={updateFilter}
-                        onResetFilters={resetFilters}
-                        mobileOpen={navOpen}
-                        onClose={() => setNavOpen(false)}
-                    />
-
-                    <section className="bg-[#efefef]">
-                        <div className="border-b border-slate-300 px-6 py-6 md:px-8">
-                            <h1 className="text-[2rem] font-semibold leading-tight text-slate-950">
-                                Catalogue de livres
+                <section>
+                        <div className="border-b px-6 py-6 md:px-8" style={{ borderColor: "var(--border-soft)", background: "var(--bg-surface)" }}>
+                            <h1 className="text-[2rem] font-semibold leading-tight" style={{ color: "var(--text-main)" }}>
+                                Catalogue
                             </h1>
-                            <p className="text-[1.05rem] text-slate-500">
+                            <p className="text-[1.05rem]" style={{ color: "var(--text-muted)" }}>
                                 Consultez et empruntez parmi nos {pagination.total} ouvrages disponibles
                             </p>
 
-                            <div className="mt-5 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-                                <div className="flex w-full max-w-140 flex-col gap-3 sm:flex-row">
-                                    <input
-                                        type="text"
-                                        value={searchInput}
-                                        onChange={(event) => {
-                                            setSearchInput(event.target.value);
-                                            setPage(1);
-                                        }}
-                                        placeholder="Recherche par titre, auteur, description, ISBN..."
-                                        className="h-11 flex-1 rounded-xl border border-slate-700 bg-white px-4 text-sm outline-none"
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={() => setPage(1)}
-                                        className="h-11 rounded-xl border border-slate-800 bg-white px-6 text-sm font-medium text-slate-950"
-                                    >
-                                        Rechercher
-                                    </button>
-                                </div>
+                            {/* Barre de recherche + filtres */}
+                            <div className="mt-5 flex flex-wrap items-center gap-3">
+                                <input
+                                    type="text"
+                                    value={searchInput}
+                                    onChange={(event) => {
+                                        setSearchInput(event.target.value);
+                                        setPage(1);
+                                    }}
+                                    placeholder="Rechercher par titre, auteur ou ISBN..."
+                                    className="h-11 flex-1 min-w-[200px] rounded-xl border border-slate-300 bg-white px-4 text-sm outline-none focus:border-slate-500"
+                                />
+                                <select
+                                    value={filters.categoryId}
+                                    onChange={(e) => updateFilter("categoryId", e.target.value)}
+                                    className="h-11 rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none"
+                                    style={{ color: "var(--text-main)" }}
+                                >
+                                    <option value="">Toutes catégories</option>
+                                    {categories.map((cat) => {
+                                        const id = String(cat?.id ?? cat?._id ?? cat?.value ?? "");
+                                        const name = cat?.name || cat?.label || cat?.title || "Catégorie";
+                                        if (!id) return null;
+                                        return <option key={id} value={id}>{name}</option>;
+                                    })}
+                                </select>
+                                <select
+                                    value={filters.sort}
+                                    onChange={(e) => updateFilter("sort", e.target.value)}
+                                    className="h-11 rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none"
+                                    style={{ color: "var(--text-main)" }}
+                                >
+                                    <option value="random">Trier</option>
+                                    <option value="asc">A → Z</option>
+                                    <option value="desc">Z → A</option>
+                                </select>
+                            </div>
 
-                                <div className="flex gap-3">
+                            {/* Disponible uniquement */}
+                            <div className="mt-3 flex items-center gap-2">
+                                <input
+                                    type="checkbox"
+                                    id="available-only"
+                                    checked={filters.available === "true"}
+                                    onChange={(e) => updateFilter("available", e.target.checked ? "true" : "")}
+                                    className="rounded cursor-pointer"
+                                />
+                                <label htmlFor="available-only" className="text-sm cursor-pointer" style={{ color: "var(--text-muted)" }}>
+                                    Disponible uniquement
+                                </label>
+                            </div>
+
+                            {/* Compteur + vue */}
+                            <div className="mt-4 flex items-center justify-between">
+                                <p className="text-sm font-medium" style={{ color: "var(--text-muted)" }}>
+                                    {pagination.total} livre{pagination.total !== 1 ? "s" : ""} trouvé{pagination.total !== 1 ? "s" : ""}
+                                </p>
+                                <div className="flex gap-2">
                                     <button
                                         type="button"
                                         onClick={() => updateFilter("view", "grid")}
-                                        className={`rounded-xl border px-5 py-2 text-sm font-medium transition-colors ${
-                                            filters.view === "grid"
-                                                ? "border-slate-800 bg-slate-900 text-white"
-                                                : "border-slate-800 bg-white text-slate-950"
-                                        }`}
+                                        className="rounded-xl border px-5 py-2 text-sm font-medium transition-all"
+                                        style={filters.view === "grid"
+                                            ? { background: "var(--tangerine)", borderColor: "var(--tangerine)", color: "white" }
+                                            : { background: "var(--bg-surface)", borderColor: "var(--border-soft)", color: "var(--text-main)" }
+                                        }
                                     >
                                         Grille
                                     </button>
                                     <button
                                         type="button"
                                         onClick={() => updateFilter("view", "list")}
-                                        className={`rounded-xl border px-5 py-2 text-sm font-medium transition-colors ${
-                                            filters.view === "list"
-                                                ? "border-blue-500 bg-blue-500 text-white"
-                                                : "border-blue-400 bg-white text-blue-500"
-                                        }`}
+                                        className="rounded-xl border px-5 py-2 text-sm font-medium transition-all"
+                                        style={filters.view === "list"
+                                            ? { background: "var(--navy)", borderColor: "var(--navy)", color: "white" }
+                                            : { background: "var(--bg-surface)", borderColor: "var(--border-soft)", color: "var(--text-main)" }
+                                        }
                                     >
                                         Liste
                                     </button>
                                 </div>
                             </div>
 
-                            <p className="mt-5 text-lg font-semibold text-slate-950">
-                                {filtersAreActive
-                                    ? `${pagination.total} livres trouves avec les filtres`
-                                    : `${pagination.total} livres trouves`}
-                            </p>
                             {reservationLimitReached && (
                                 <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-700">
                                     {getReservationLimitMessage()}
@@ -525,7 +549,7 @@ export default function BooksPage() {
 
                         <div className="px-6 py-6 md:px-8">
                             {loading && (
-                                <div className="flex min-h-60 items-center justify-center rounded-3xl border border-slate-300 bg-white">
+                                <div className="flex min-h-60 items-center justify-center rounded-3xl" style={{ background: "var(--bg-surface)", border: "1px solid var(--border-soft)" }}>
                                     <div className="flex items-center gap-3 text-slate-600">
                                         <img
                                             src="/spinner.svg"
@@ -581,7 +605,7 @@ export default function BooksPage() {
                                         })}
                                     </div>
 
-                                    <div className="mt-8 flex flex-col gap-4 rounded-3xl border border-slate-300 bg-white px-5 py-4 md:flex-row md:items-center md:justify-between">
+                                    <div className="mt-8 flex flex-col gap-4 rounded-3xl px-5 py-4 md:flex-row md:items-center md:justify-between" style={{ background: "var(--bg-surface)", border: "1px solid var(--border-soft)" }}>
                                         <p className="text-sm text-slate-500">
                                             Page {pagination.page} sur {pagination.pages} - {pagination.total} livres
                                         </p>
@@ -602,11 +626,11 @@ export default function BooksPage() {
                                                     type="button"
                                                     onClick={() => setPage(pageNumber)}
                                                     disabled={loading}
-                                                    className={`min-w-10 rounded-xl border px-3 py-2 text-sm font-medium ${
-                                                        pageNumber === pagination.page
-                                                            ? "border-sky-500 bg-sky-500 text-white"
-                                                            : "border-slate-300 bg-white text-slate-700"
-                                                    }`}
+                                                    className="min-w-10 rounded-xl border px-3 py-2 text-sm font-medium"
+                                                    style={pageNumber === pagination.page
+                                                        ? { background: "var(--tangerine)", borderColor: "var(--tangerine)", color: "white" }
+                                                        : { background: "var(--bg-surface)", borderColor: "var(--border-soft)", color: "var(--text-main)" }
+                                                    }
                                                 >
                                                     {pageNumber}
                                                 </button>
@@ -629,9 +653,8 @@ export default function BooksPage() {
                                 </>
                             )}
                         </div>
-                    </section>
-                </div>
-            </section>
-        </main>
+                </section>
+            </div>
+        </div>
     );
 }

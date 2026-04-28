@@ -69,18 +69,17 @@ export default function MyReviewsPage() {
     }, []);
 
     return (
-        <div className="min-h-screen bg-[#f2f2f2]">
-            <HeaderComponent
-                subtitle="Page Mes avis - User"
-                user={user}
-                onMenuToggle={() => setNavOpen((currentValue) => !currentValue)}
+        <div className="flex min-h-screen" style={{ background: "var(--bg-main)" }}>
+            <BooksSidebar
+                showFilters={false}
+                mobileOpen={navOpen}
+                onClose={() => setNavOpen(false)}
             />
 
-            <div className="grid lg:grid-cols-[280px_1fr]">
-                <BooksSidebar
-                    showFilters={false}
-                    mobileOpen={navOpen}
-                    onClose={() => setNavOpen(false)}
+            <div className="flex-1 flex flex-col min-w-0">
+                <HeaderComponent
+                    user={user}
+                    onMenuToggle={() => setNavOpen((currentValue) => !currentValue)}
                 />
 
                 <main className="space-y-6 p-6">
@@ -126,3 +125,4 @@ export default function MyReviewsPage() {
         </div>
     );
 }
+
