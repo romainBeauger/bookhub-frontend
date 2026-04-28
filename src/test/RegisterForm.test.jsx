@@ -33,12 +33,12 @@ describe('RegisterForm', () => {
     it('affiche tous les champs du formulaire', () => {
         renderRegisterForm()
 
-        expect(screen.getByPlaceholderText('Saisissez votre nom')).toBeInTheDocument()
-        expect(screen.getByPlaceholderText('Saisissez votre prénom')).toBeInTheDocument()
-        expect(screen.getByPlaceholderText('Entrez votre email')).toBeInTheDocument()
-        expect(screen.getByPlaceholderText('Entrez votre mot de passe')).toBeInTheDocument()
-        expect(screen.getByPlaceholderText('Confirmez votre mot de passe')).toBeInTheDocument()
-        expect(screen.getByRole('button', { name: /créer mon compte/i })).toBeInTheDocument()
+        expect(screen.getByPlaceholderText('Nom')).toBeInTheDocument()
+        expect(screen.getByPlaceholderText('Prénom')).toBeInTheDocument()
+        expect(screen.getByPlaceholderText('Adresse email')).toBeInTheDocument()
+        expect(screen.getByPlaceholderText('Mot de passe')).toBeInTheDocument()
+        expect(screen.getByPlaceholderText('Confirmer le mot de passe')).toBeInTheDocument()
+        expect(screen.getByRole('button', { name: /s'inscrire/i })).toBeInTheDocument()
     })
 
     // --- TEST 2 : erreurs sur formulaire vide ---
@@ -46,7 +46,7 @@ describe('RegisterForm', () => {
         const user = userEvent.setup()
         renderRegisterForm()
 
-        await user.click(screen.getByRole('button', { name: /créer mon compte/i }))
+        await user.click(screen.getByRole('button', { name: /s'inscrire/i }))
 
         expect(screen.getByText('Le nom est obligatoire')).toBeInTheDocument()
         expect(screen.getByText('Le prénom est obligatoire')).toBeInTheDocument()
@@ -58,12 +58,12 @@ describe('RegisterForm', () => {
     it('affiche une erreur si le format email est invalide', () => {
         renderRegisterForm()
 
-        fireEvent.change(screen.getByPlaceholderText('Entrez votre email'), {
+        fireEvent.change(screen.getByPlaceholderText('Adresse email'), {
             target: { value: 'email-invalide' }
         })
 
         // On soumet le formulaire directement — bypasse la validation HTML5 native
-        fireEvent.submit(screen.getByRole('button', { name: /créer mon compte/i }).closest('form'))
+        fireEvent.submit(screen.getByRole('button', { name: /s'inscrire/i }).closest('form'))
 
         expect(screen.getByText("Le format d'email est incorrect")).toBeInTheDocument()
     })
@@ -73,9 +73,9 @@ describe('RegisterForm', () => {
         const user = userEvent.setup()
         renderRegisterForm()
 
-        await user.type(screen.getByPlaceholderText('Entrez votre mot de passe'), 'password123')
-        await user.type(screen.getByPlaceholderText('Confirmez votre mot de passe'), 'autrepassword')
-        await user.click(screen.getByRole('button', { name: /créer mon compte/i }))
+        await user.type(screen.getByPlaceholderText('Mot de passe'), 'password123')
+        await user.type(screen.getByPlaceholderText('Confirmer le mot de passe'), 'autrepassword')
+        await user.click(screen.getByRole('button', { name: /s'inscrire/i }))
 
         expect(screen.getByText('Les deux mots de passe doivent être identiques')).toBeInTheDocument()
     })
@@ -88,12 +88,12 @@ describe('RegisterForm', () => {
         const user = userEvent.setup()
         renderRegisterForm()
 
-        await user.type(screen.getByPlaceholderText('Saisissez votre nom'), 'Dupont')
-        await user.type(screen.getByPlaceholderText('Saisissez votre prénom'), 'Jean')
-        await user.type(screen.getByPlaceholderText('Entrez votre email'), 'jean@mail.com')
-        await user.type(screen.getByPlaceholderText('Entrez votre mot de passe'), 'password123')
-        await user.type(screen.getByPlaceholderText('Confirmez votre mot de passe'), 'password123')
-        await user.click(screen.getByRole('button', { name: /créer mon compte/i }))
+        await user.type(screen.getByPlaceholderText('Nom'), 'Dupont')
+        await user.type(screen.getByPlaceholderText('Prénom'), 'Jean')
+        await user.type(screen.getByPlaceholderText('Adresse email'), 'jean@mail.com')
+        await user.type(screen.getByPlaceholderText('Mot de passe'), 'password123')
+        await user.type(screen.getByPlaceholderText('Confirmer le mot de passe'), 'password123')
+        await user.click(screen.getByRole('button', { name: /s'inscrire/i }))
 
         // Vérif que register() a bien été appelé avec les bonnes données
         expect(register).toHaveBeenCalledWith({
@@ -115,12 +115,12 @@ describe('RegisterForm', () => {
         const user = userEvent.setup()
         renderRegisterForm()
 
-        await user.type(screen.getByPlaceholderText('Saisissez votre nom'), 'Dupont')
-        await user.type(screen.getByPlaceholderText('Saisissez votre prénom'), 'Jean')
-        await user.type(screen.getByPlaceholderText('Entrez votre email'), 'jean@mail.com')
-        await user.type(screen.getByPlaceholderText('Entrez votre mot de passe'), 'password123')
-        await user.type(screen.getByPlaceholderText('Confirmez votre mot de passe'), 'password123')
-        await user.click(screen.getByRole('button', { name: /créer mon compte/i }))
+        await user.type(screen.getByPlaceholderText('Nom'), 'Dupont')
+        await user.type(screen.getByPlaceholderText('Prénom'), 'Jean')
+        await user.type(screen.getByPlaceholderText('Adresse email'), 'jean@mail.com')
+        await user.type(screen.getByPlaceholderText('Mot de passe'), 'password123')
+        await user.type(screen.getByPlaceholderText('Confirmer le mot de passe'), 'password123')
+        await user.click(screen.getByRole('button', { name: /s'inscrire/i }))
 
         // On cible le <p> spécifiquement (pas le toast <div>)
         expect(await screen.findByText('Email déjà utilisé', { selector: 'p' })).toBeInTheDocument()
